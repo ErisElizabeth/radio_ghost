@@ -4,6 +4,7 @@ const ui = {
   exportWavCommand: document.querySelector("#exportWavCommand"),
   exportMp3Command: document.querySelector("#exportMp3Command"),
   feminizeCommand: document.querySelector("#feminizeCommand"),
+  analyzeCommand: document.querySelector("#analyzeCommand"),
   recordButton: document.querySelector("#recordButton"),
   stopButton: document.querySelector("#stopButton"),
   playButton: document.querySelector("#playButton"),
@@ -11,7 +12,12 @@ const ui = {
   player: document.querySelector("#audioPlayer"),
   status: document.querySelector("#status"),
   timer: document.querySelector("#timer"),
-  meter: document.querySelector("#meter")
+  meter: document.querySelector("#meter"),
+  analysisPanel: document.querySelector("#analysisPanel"),
+  peakAmplitude: document.querySelector("#peakAmplitude"),
+  rmsAmplitude: document.querySelector("#rmsAmplitude"),
+  pitchValue: document.querySelector("#pitchValue"),
+  wavelengthValue: document.querySelector("#wavelengthValue")
 };
 
 const meterContext = ui.meter.getContext("2d");
@@ -45,6 +51,7 @@ function setExportReady(isReady) {
 
 function setVoiceReady(isReady) {
   ui.feminizeCommand.disabled = !isReady;
+  ui.analyzeCommand.disabled = !isReady;
 }
 
 function setRecordingControls(isRecording) {
@@ -69,6 +76,7 @@ function setCurrentBlob(blob, fileName) {
   ui.player.src = state.objectUrl;
   ui.player.load();
   ui.playButton.disabled = false;
+  ui.analysisPanel.hidden = true;
   setExportReady(true);
   setVoiceReady(true);
 }
@@ -293,6 +301,91 @@ async function renderFeminineVoicePass(audioBuffer) {
   return context.startRendering();
 }
 
+function getAnalysisSamples(audioBuffer) {
+  const length = audioBuffer.length;
+  const samples = new Float32Array(length);
+
+  for (let channelIndex = 0; channelIndex < audioBuffer.numberOfChannels; channelIndex += 1) {
+    const channel = audioBuffer.getChannelData(channelIndex);
+    for (let sampleIndex = 0; sampleIndex < length; sampleIndex += 1) {
+      samples[sampleIndex] += channel[sampleIndex] / audioBuffer.numberOfChannels;
+    }
+  }
+
+  return samples;
+}
+
+function analyzeAmplitude(samples) {
+  let peak = 0;
+  let sumSquares = 0;
+
+  samples.forEach((sample) => {
+    const absolute = Math.abs(sample);
+    peak = Math.max(peak, absolute);
+    sumSquares += sample * sample;
+  });
+
+  return {
+    peak,
+    rms: Math.sqrt(sumSquares / samples.length)
+  };
+}
+
+function estimatePitch(samples, sampleRate) {
+  const minimumFrequency = 70;
+  const maximumFrequency = 420;
+  const minimumLag = Math.floor(sampleRate / maximumFrequency);
+  const maximumLag = Math.floor(sampleRate / minimumFrequency);
+  const windowSize = Math.min(samples.length, sampleRate * 2);
+  const start = Math.max(0, Math.floor((samples.length - windowSize) / 2));
+  let bestLag = 0;
+  let bestCorrelation = 0;
+
+  for (let lag = minimumLag; lag <= maximumLag; lag += 1) {
+    let correlation = 0;
+    let energyA = 0;
+    let energyB = 0;
+
+    for (let index = 0; index < windowSize - lag; index += 1) {
+      const first = samples[start + index];
+      const second = samples[start + index + lag];
+      correlation += first * second;
+      energyA += first * first;
+      energyB += second * second;
+    }
+
+    const normalized = correlation / Math.sqrt(energyA * energyB || 1);
+    if (normalized > bestCorrelation) {
+      bestCorrelation = normalized;
+      bestLag = lag;
+    }
+  }
+
+  if (bestCorrelation < 0.32 || bestLag === 0) {
+    return null;
+  }
+
+  return sampleRate / bestLag;
+}
+
+function formatAmplitude(value) {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatPitch(frequency) {
+  return frequency ? `${frequency.toFixed(1)} Hz` : "Unclear";
+}
+
+function formatWavelength(frequency) {
+  if (!frequency) {
+    return "Unclear";
+  }
+
+  const speedOfSoundMetersPerSecond = 343;
+  const meters = speedOfSoundMetersPerSecond / frequency;
+  return `${meters.toFixed(2)} m`;
+}
+
 function downloadBytes(bytes, extension, mimeType) {
   const blob = new Blob([bytes], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -490,11 +583,39 @@ async function feminizeVoice() {
   }
 }
 
+async function analyzeVoice() {
+  if (!state.blob) {
+    return;
+  }
+
+  setVoiceReady(false);
+  setStatus("Analyzing audio...");
+
+  try {
+    const audioBuffer = await blobToAudioBuffer(state.blob);
+    const samples = getAnalysisSamples(audioBuffer);
+    const amplitude = analyzeAmplitude(samples);
+    const pitch = estimatePitch(samples, audioBuffer.sampleRate);
+
+    ui.peakAmplitude.textContent = formatAmplitude(amplitude.peak);
+    ui.rmsAmplitude.textContent = formatAmplitude(amplitude.rms);
+    ui.pitchValue.textContent = formatPitch(pitch);
+    ui.wavelengthValue.textContent = formatWavelength(pitch);
+    ui.analysisPanel.hidden = false;
+    setStatus("Analysis ready");
+  } catch (error) {
+    setStatus(`Analysis failed: ${error.message}`);
+  } finally {
+    setVoiceReady(Boolean(state.blob));
+  }
+}
+
 function wireEvents() {
   ui.importCommand.addEventListener("click", importAudio);
   ui.exportWavCommand.addEventListener("click", () => exportAudio("wav"));
   ui.exportMp3Command.addEventListener("click", () => exportAudio("mp3"));
   ui.feminizeCommand.addEventListener("click", feminizeVoice);
+  ui.analyzeCommand.addEventListener("click", analyzeVoice);
   ui.fileInput.addEventListener("change", handleFileImport);
   ui.exportMenuItem.addEventListener("mouseenter", () => {
     clearTimeout(exportMenuCloseTimer);
