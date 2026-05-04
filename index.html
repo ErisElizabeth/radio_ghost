@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Ghost</title>
-    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.8" />
+    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.9" />
   </head>
   <body>
     <nav class="menu-bar" aria-label="Application menu">
@@ -39,7 +39,32 @@
           <h1>Radio Ghost</h1>
           <p id="status">Ready to record</p>
         </div>
-        <div class="ghost-signal" aria-hidden="true"></div>
+        <div class="ghost-signal" aria-hidden="true">
+          <svg viewBox="0 0 1000 120" preserveAspectRatio="none">
+            <path
+              class="ghost-wave ghost-wave-glow"
+              d="M 0 60
+                 C 50 42, 100 42, 150 60
+                 C 200 78, 250 78, 300 60
+                 C 350 42, 400 42, 450 60
+                 C 500 78, 550 78, 600 60
+                 C 650 42, 700 42, 750 60
+                 C 800 78, 850 78, 900 60
+                 C 950 42, 1000 42, 1050 60"
+            />
+            <path
+              class="ghost-wave ghost-wave-core"
+              d="M 0 60
+                 C 50 42, 100 42, 150 60
+                 C 200 78, 250 78, 300 60
+                 C 350 42, 400 42, 450 60
+                 C 500 78, 550 78, 600 60
+                 C 650 42, 700 42, 750 60
+                 C 800 78, 850 78, 900 60
+                 C 950 42, 1000 42, 1050 60"
+            />
+          </svg>
+        </div>
       </header>
 
       <section class="recorder-panel" aria-label="Recorder">
@@ -66,7 +91,7 @@
       </section>
     </main>
 
-    <script src="vendor/lame.min.js?v=0.1.0-alpha.8"></script>
-    <script src="renderer.js?v=0.1.0-alpha.8"></script>
+    <script src="vendor/lame.min.js?v=0.1.0-alpha.9"></script>
+    <script src="renderer.js?v=0.1.0-alpha.9"></script>
   </body>
 </html>
