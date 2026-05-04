@@ -3,6 +3,7 @@ const ui = {
   exportMenuItem: document.querySelector("#exportMenuItem"),
   exportWavCommand: document.querySelector("#exportWavCommand"),
   exportMp3Command: document.querySelector("#exportMp3Command"),
+  feminizeCommand: document.querySelector("#feminizeCommand"),
   recordButton: document.querySelector("#recordButton"),
   stopButton: document.querySelector("#stopButton"),
   playButton: document.querySelector("#playButton"),
@@ -42,6 +43,10 @@ function setExportReady(isReady) {
   ui.exportMp3Command.disabled = !isReady;
 }
 
+function setVoiceReady(isReady) {
+  ui.feminizeCommand.disabled = !isReady;
+}
+
 function setRecordingControls(isRecording) {
   ui.recordButton.disabled = isRecording;
   ui.importCommand.disabled = isRecording;
@@ -49,6 +54,7 @@ function setRecordingControls(isRecording) {
   ui.playButton.disabled = isRecording || !state.blob;
   ui.recordButton.classList.toggle("is-recording", isRecording);
   setExportReady(!isRecording && Boolean(state.blob));
+  setVoiceReady(!isRecording && Boolean(state.blob));
 }
 
 function setCurrentBlob(blob, fileName) {
@@ -64,6 +70,7 @@ function setCurrentBlob(blob, fileName) {
   ui.player.load();
   ui.playButton.disabled = false;
   setExportReady(true);
+  setVoiceReady(true);
 }
 
 function formatDuration(milliseconds) {
@@ -236,6 +243,56 @@ async function blobToAudioBuffer(blob) {
   }
 }
 
+async function renderFeminineVoicePass(audioBuffer) {
+  const context = new OfflineAudioContext(
+    audioBuffer.numberOfChannels,
+    audioBuffer.length,
+    audioBuffer.sampleRate
+  );
+  const source = context.createBufferSource();
+  const highPass = context.createBiquadFilter();
+  const lowShelf = context.createBiquadFilter();
+  const presence = context.createBiquadFilter();
+  const air = context.createBiquadFilter();
+  const compressor = context.createDynamicsCompressor();
+
+  source.buffer = audioBuffer;
+
+  highPass.type = "highpass";
+  highPass.frequency.value = 120;
+  highPass.Q.value = 0.7;
+
+  lowShelf.type = "lowshelf";
+  lowShelf.frequency.value = 220;
+  lowShelf.gain.value = -3;
+
+  presence.type = "peaking";
+  presence.frequency.value = 2600;
+  presence.Q.value = 0.85;
+  presence.gain.value = 3;
+
+  air.type = "highshelf";
+  air.frequency.value = 6200;
+  air.gain.value = 4;
+
+  compressor.threshold.value = -24;
+  compressor.knee.value = 18;
+  compressor.ratio.value = 2.5;
+  compressor.attack.value = 0.012;
+  compressor.release.value = 0.18;
+
+  source
+    .connect(highPass)
+    .connect(lowShelf)
+    .connect(presence)
+    .connect(air)
+    .connect(compressor)
+    .connect(context.destination);
+  source.start();
+
+  return context.startRendering();
+}
+
 function downloadBytes(bytes, extension, mimeType) {
   const blob = new Blob([bytes], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -402,10 +459,42 @@ async function exportAudio(extension) {
   }
 }
 
+async function feminizeVoice() {
+  if (!state.blob) {
+    return;
+  }
+
+  setExportReady(false);
+  setVoiceReady(false);
+  ui.recordButton.disabled = true;
+  ui.importCommand.disabled = true;
+  ui.playButton.disabled = true;
+  setStatus("Applying feminine voice pass...");
+
+  try {
+    const audioBuffer = await blobToAudioBuffer(state.blob);
+    const processedBuffer = await renderFeminineVoicePass(audioBuffer);
+    const wavBytes = audioBufferToWavBytes(processedBuffer);
+    const processedBlob = new Blob([wavBytes], { type: "audio/wav" });
+
+    setCurrentBlob(processedBlob, `${state.fileName}-feminine-pass`);
+    setStatus("Feminine voice pass ready");
+  } catch (error) {
+    setStatus(`Feminine voice pass failed: ${error.message}`);
+  } finally {
+    ui.recordButton.disabled = false;
+    ui.importCommand.disabled = false;
+    ui.playButton.disabled = !state.blob;
+    setExportReady(Boolean(state.blob));
+    setVoiceReady(Boolean(state.blob));
+  }
+}
+
 function wireEvents() {
   ui.importCommand.addEventListener("click", importAudio);
   ui.exportWavCommand.addEventListener("click", () => exportAudio("wav"));
   ui.exportMp3Command.addEventListener("click", () => exportAudio("mp3"));
+  ui.feminizeCommand.addEventListener("click", feminizeVoice);
   ui.fileInput.addEventListener("change", handleFileImport);
   ui.exportMenuItem.addEventListener("mouseenter", () => {
     clearTimeout(exportMenuCloseTimer);
