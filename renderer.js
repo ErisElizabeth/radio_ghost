@@ -318,11 +318,20 @@ function finalizeRecording() {
 }
 
 function importAudio() {
+  if (!fileInput) {
+    setStatus("Import needs the updated index.html file");
+    return;
+  }
+
   fileInput.value = "";
   fileInput.click();
 }
 
 function handleImportedFile() {
+  if (!fileInput) {
+    return;
+  }
+
   const file = fileInput.files[0];
   if (!file) {
     return;
@@ -385,10 +394,15 @@ recordBtn.addEventListener("click", async () => {
 });
 
 importBtn.addEventListener("click", importAudio);
-fileInput.addEventListener("change", handleImportedFile);
 stopBtn.addEventListener("click", stopRecording);
 playBtn.addEventListener("click", () => player.play());
 exportWavBtn.addEventListener("click", () => exportAudio("wav"));
 exportMp3Btn.addEventListener("click", () => exportAudio("mp3"));
+
+if (fileInput) {
+  fileInput.addEventListener("change", handleImportedFile);
+} else {
+  setStatus("Ready to record. Upload the updated index.html to enable Import.");
+}
 
 drawIdleMeter();
