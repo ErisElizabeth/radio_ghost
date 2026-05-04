@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Ghost</title>
-    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.3" />
+    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.4" />
   </head>
   <body>
     <nav class="menu-bar" aria-label="Application menu">
@@ -26,6 +26,11 @@
           </div>
         </div>
       </div>
+      <div class="window-controls" aria-label="Window controls">
+        <button class="window-control" type="button" aria-label="Minimize" title="Minimize">-</button>
+        <button class="window-control" type="button" aria-label="Maximize" title="Maximize">□</button>
+        <button class="window-control close" type="button" aria-label="Close" title="Close">×</button>
+      </div>
     </nav>
 
     <main class="app-shell">
@@ -34,7 +39,6 @@
           <h1>Radio Ghost</h1>
           <p id="status">Ready to record</p>
         </div>
-        <span class="badge">Standalone web app</span>
       </header>
 
       <section class="recorder-panel" aria-label="Recorder">
@@ -45,9 +49,13 @@
         <div class="timer" id="timer">00:00.0</div>
 
         <div class="controls">
-          <button id="recordButton" class="primary" type="button">Record</button>
+          <button id="recordButton" class="icon-button record-button" type="button" aria-label="Record" title="Record">
+            <span class="button-icon mic-icon" aria-hidden="true"></span>
+          </button>
           <button id="stopButton" type="button" disabled>Stop</button>
-          <button id="playButton" type="button" disabled>Play</button>
+          <button id="playButton" class="icon-button play-button" type="button" aria-label="Play" title="Play" disabled>
+            <span class="button-icon play-icon" aria-hidden="true"></span>
+          </button>
         </div>
 
         <input id="fileInput" type="file" accept=".wav,.mp3,audio/wav,audio/mpeg" hidden />
@@ -55,7 +63,7 @@
       </section>
     </main>
 
-    <script src="vendor/lame.min.js?v=0.1.0-alpha.3"></script>
-    <script src="renderer.js?v=0.1.0-alpha.3"></script>
+    <script src="vendor/lame.min.js?v=0.1.0-alpha.4"></script>
+    <script src="renderer.js?v=0.1.0-alpha.4"></script>
   </body>
 </html>

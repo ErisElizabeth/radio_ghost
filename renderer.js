@@ -44,6 +44,7 @@ function setRecordingControls(isRecording) {
   ui.importCommand.disabled = isRecording;
   ui.stopButton.disabled = !isRecording;
   ui.playButton.disabled = isRecording || !state.blob;
+  ui.recordButton.classList.toggle("is-recording", isRecording);
   setExportReady(!isRecording && Boolean(state.blob));
 }
 
@@ -403,6 +404,9 @@ function wireEvents() {
 
   ui.stopButton.addEventListener("click", stopRecording);
   ui.playButton.addEventListener("click", () => ui.player.play());
+  ui.player.addEventListener("play", () => ui.playButton.classList.add("is-playing"));
+  ui.player.addEventListener("pause", () => ui.playButton.classList.remove("is-playing"));
+  ui.player.addEventListener("ended", () => ui.playButton.classList.remove("is-playing"));
 }
 
 function boot() {
