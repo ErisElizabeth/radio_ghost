@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Ghost</title>
-    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.14" />
+    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.17" />
   </head>
   <body>
     <nav class="menu-bar" aria-label="Application menu">
@@ -32,6 +32,9 @@
           <button id="feminizeCommand" class="menu-command" type="button" disabled>
             Feminize
           </button>
+          <button id="analyzeCommand" class="menu-command" type="button" disabled>
+            Analyze
+          </button>
         </div>
       </div>
     </nav>
@@ -42,6 +45,24 @@
           <h1>Radio Ghost</h1>
           <p id="status">Ready to record</p>
         </div>
+        <section id="analysisPanel" class="analysis-panel" aria-label="Audio analysis" hidden>
+          <div>
+            <span class="analysis-label">Peak amplitude</span>
+            <strong id="peakAmplitude">--</strong>
+          </div>
+          <div>
+            <span class="analysis-label">RMS amplitude</span>
+            <strong id="rmsAmplitude">--</strong>
+          </div>
+          <div>
+            <span class="analysis-label">Pitch</span>
+            <strong id="pitchValue">--</strong>
+          </div>
+          <div>
+            <span class="analysis-label">Wavelength</span>
+            <strong id="wavelengthValue">--</strong>
+          </div>
+        </section>
       </header>
 
       <section class="recorder-panel" aria-label="Recorder">
@@ -65,10 +86,11 @@
 
         <input id="fileInput" type="file" accept=".wav,.mp3,audio/wav,audio/mpeg" hidden />
         <audio id="audioPlayer" controls></audio>
+
       </section>
     </main>
 
-    <script src="vendor/lame.min.js?v=0.1.0-alpha.14"></script>
-    <script src="renderer.js?v=0.1.0-alpha.14"></script>
+    <script src="vendor/lame.min.js?v=0.1.0-alpha.17"></script>
+    <script src="renderer.js?v=0.1.0-alpha.17"></script>
   </body>
 </html>

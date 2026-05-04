@@ -217,6 +217,42 @@ audio {
   width: 100%;
 }
 
+.analysis-panel {
+  display: grid;
+  flex: 0 1 430px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid rgba(242, 232, 216, 0.1);
+  border-radius: 8px;
+  background: rgba(242, 232, 216, 0.08);
+}
+
+.analysis-panel[hidden] {
+  display: none;
+}
+
+.analysis-panel div {
+  min-width: 0;
+  padding: 10px 12px;
+  background: var(--control);
+}
+
+.analysis-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted-text);
+  font-size: 12px;
+}
+
+.analysis-panel strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--primary-text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
 .icon-button {
   display: grid;
   width: 66px;
@@ -238,20 +274,26 @@ audio {
   width: 31px;
   height: 31px;
   background: var(--primary-text);
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
   mask-position: center;
   mask-repeat: no-repeat;
   mask-size: contain;
 }
 
 .mic-icon {
+  -webkit-mask-image: url("assets/radio-mic-svgrepo-com.svg");
   mask-image: url("assets/radio-mic-svgrepo-com.svg");
 }
 
 .play-icon {
+  -webkit-mask-image: url("assets/music-play-play-button-svgrepo-com.svg");
   mask-image: url("assets/music-play-play-button-svgrepo-com.svg");
 }
 
 .stop-icon {
+  -webkit-mask-image: url("assets/music-player-stop-svgrepo-com.svg");
   mask-image: url("assets/music-player-stop-svgrepo-com.svg");
 }
 
@@ -304,5 +346,10 @@ audio {
 
   button {
     flex: 1 1 140px;
+  }
+
+  .analysis-panel {
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
   }
 }
