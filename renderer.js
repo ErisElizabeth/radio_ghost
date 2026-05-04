@@ -343,7 +343,13 @@ function handleImportedFile() {
 }
 
 function stopRecording() {
+  setStatus("Stop clicked");
+
   if (!mediaRecorder || mediaRecorder.state === "inactive") {
+    stopBtn.disabled = true;
+    recordBtn.disabled = false;
+    importBtn.disabled = false;
+    setStatus("No active recording to stop");
     return;
   }
 
@@ -395,6 +401,7 @@ recordBtn.addEventListener("click", async () => {
 
 importBtn.addEventListener("click", importAudio);
 stopBtn.addEventListener("click", stopRecording);
+stopBtn.onclick = stopRecording;
 playBtn.addEventListener("click", () => player.play());
 exportWavBtn.addEventListener("click", () => exportAudio("wav"));
 exportMp3Btn.addEventListener("click", () => exportAudio("mp3"));
