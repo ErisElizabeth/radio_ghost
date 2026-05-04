@@ -174,47 +174,6 @@ p {
   font-size: 16px;
 }
 
-.ghost-signal {
-  position: absolute;
-  top: -18px;
-  right: 0;
-  width: min(38vw, 360px);
-  height: 130px;
-  overflow: visible;
-  background: transparent;
-  pointer-events: none;
-}
-
-.ghost-signal svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-  background: transparent;
-}
-
-.wave {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.wave-glow {
-  stroke: #7cffb2;
-  stroke-width: 7;
-  opacity: 0.28;
-  filter:
-    drop-shadow(0 0 5px rgba(124, 255, 178, 0.45))
-    drop-shadow(0 0 10px rgba(124, 255, 178, 0.28));
-}
-
-.wave-core {
-  stroke: #214f38;
-  stroke-width: 3.5;
-  opacity: 1;
-  filter: drop-shadow(0 0 3px rgba(124, 255, 178, 0.45));
-}
-
 .recorder-panel {
   display: grid;
   gap: 22px;
