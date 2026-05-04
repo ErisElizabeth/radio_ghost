@@ -23,6 +23,7 @@ let meterFrame;
 let sourceNode;
 let inputStream;
 let currentObjectUrl;
+let activeRecordingMimeType = "";
 
 function setStatus(message) {
   statusText.textContent = message;
@@ -235,6 +236,7 @@ function downloadBytes(bytes, extension, mimeType) {
 async function startRecording() {
   inputStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   const mimeType = getSupportedMimeType();
+  activeRecordingMimeType = mimeType || "audio/webm";
 
   audioChunks = [];
   currentBlob = null;
@@ -258,13 +260,13 @@ async function startRecording() {
     }
   });
 
-  mediaRecorder.addEventListener("stop", () => {
-    const blob = new Blob(audioChunks, { type: mimeType || "audio/webm" });
-    setPlayerBlob(blob, "radio-ghost-recording");
-    setStatus("Recording ready");
+  mediaRecorder.addEventListener("stop", finalizeRecording);
+  mediaRecorder.addEventListener("error", (event) => {
+    setStatus(`Recording error: ${event.error?.message || "Unknown recorder error"}`);
+    resetRecordingControls();
   });
 
-  mediaRecorder.start();
+  mediaRecorder.start(250);
   recordingStartedAt = Date.now();
   recordBtn.disabled = true;
   importBtn.disabled = true;
@@ -274,6 +276,45 @@ async function startRecording() {
   setStatus("Recording...");
   updateTimer();
   drawMeter();
+}
+
+function resetRecordingControls() {
+  cancelAnimationFrame(timerFrame);
+  cancelAnimationFrame(meterFrame);
+  recordBtn.disabled = false;
+  importBtn.disabled = false;
+  stopBtn.disabled = true;
+
+  if (inputStream) {
+    inputStream.getTracks().forEach((track) => track.stop());
+  }
+
+  if (sourceNode) {
+    sourceNode.disconnect();
+  }
+
+  if (audioContext) {
+    audioContext.close();
+  }
+
+  analyser = null;
+  inputStream = null;
+  sourceNode = null;
+  audioContext = null;
+  drawIdleMeter();
+}
+
+function finalizeRecording() {
+  timer.textContent = formatDuration(Date.now() - recordingStartedAt);
+  resetRecordingControls();
+
+  if (audioChunks.length > 0) {
+    const blob = new Blob(audioChunks, { type: activeRecordingMimeType });
+    setPlayerBlob(blob, "radio-ghost-recording");
+    setStatus("Recording ready");
+  } else {
+    setStatus("Recording stopped, but no audio was captured");
+  }
 }
 
 function importAudio() {
@@ -297,25 +338,16 @@ function stopRecording() {
     return;
   }
 
-  mediaRecorder.stop();
-  inputStream.getTracks().forEach((track) => track.stop());
-  cancelAnimationFrame(timerFrame);
-  cancelAnimationFrame(meterFrame);
-  recordBtn.disabled = false;
-  importBtn.disabled = false;
   stopBtn.disabled = true;
-  timer.textContent = formatDuration(Date.now() - recordingStartedAt);
+  setStatus("Stopping recording...");
 
-  if (sourceNode) {
-    sourceNode.disconnect();
+  try {
+    mediaRecorder.requestData();
+  } catch (_error) {
+    // Some browsers do not allow requestData during shutdown; stop still finalizes.
   }
 
-  if (audioContext) {
-    audioContext.close();
-  }
-
-  analyser = null;
-  drawIdleMeter();
+  mediaRecorder.stop();
 }
 
 async function exportAudio(extension) {
