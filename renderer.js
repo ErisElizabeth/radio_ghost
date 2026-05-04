@@ -3,7 +3,10 @@ const ui = {
   exportMenuItem: document.querySelector("#exportMenuItem"),
   exportWavCommand: document.querySelector("#exportWavCommand"),
   exportMp3Command: document.querySelector("#exportMp3Command"),
-  feminizeCommand: document.querySelector("#feminizeCommand"),
+  cleanLowsCommand: document.querySelector("#cleanLowsCommand"),
+  brightenCommand: document.querySelector("#brightenCommand"),
+  airCommand: document.querySelector("#airCommand"),
+  compressCommand: document.querySelector("#compressCommand"),
   analyzeCommand: document.querySelector("#analyzeCommand"),
   recordButton: document.querySelector("#recordButton"),
   stopButton: document.querySelector("#stopButton"),
@@ -17,7 +20,8 @@ const ui = {
   peakAmplitude: document.querySelector("#peakAmplitude"),
   rmsAmplitude: document.querySelector("#rmsAmplitude"),
   pitchValue: document.querySelector("#pitchValue"),
-  wavelengthValue: document.querySelector("#wavelengthValue")
+  wavelengthValue: document.querySelector("#wavelengthValue"),
+  vowelDurationValue: document.querySelector("#vowelDurationValue")
 };
 
 const meterContext = ui.meter.getContext("2d");
@@ -50,7 +54,10 @@ function setExportReady(isReady) {
 }
 
 function setVoiceReady(isReady) {
-  ui.feminizeCommand.disabled = !isReady;
+  ui.cleanLowsCommand.disabled = !isReady;
+  ui.brightenCommand.disabled = !isReady;
+  ui.airCommand.disabled = !isReady;
+  ui.compressCommand.disabled = !isReady;
   ui.analyzeCommand.disabled = !isReady;
 }
 
@@ -251,20 +258,38 @@ async function blobToAudioBuffer(blob) {
   }
 }
 
-async function renderFeminineVoicePass(audioBuffer) {
+function connectNodesInOrder(nodes, destination) {
+  for (let index = 0; index < nodes.length - 1; index += 1) {
+    nodes[index].connect(nodes[index + 1]);
+  }
+
+  nodes[nodes.length - 1].connect(destination);
+}
+
+async function renderFilterPass(audioBuffer, buildChain) {
   const context = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
     audioBuffer.length,
     audioBuffer.sampleRate
   );
   const source = context.createBufferSource();
+  source.buffer = audioBuffer;
+  const chain = buildChain(context);
+
+  if (chain.length === 0) {
+    source.connect(context.destination);
+  } else {
+    source.connect(chain[0]);
+    connectNodesInOrder(chain, context.destination);
+  }
+
+  source.start();
+  return context.startRendering();
+}
+
+function buildCleanLowsPass(context) {
   const highPass = context.createBiquadFilter();
   const lowShelf = context.createBiquadFilter();
-  const presence = context.createBiquadFilter();
-  const air = context.createBiquadFilter();
-  const compressor = context.createDynamicsCompressor();
-
-  source.buffer = audioBuffer;
 
   highPass.type = "highpass";
   highPass.frequency.value = 120;
@@ -274,14 +299,32 @@ async function renderFeminineVoicePass(audioBuffer) {
   lowShelf.frequency.value = 220;
   lowShelf.gain.value = -3;
 
+  return [highPass, lowShelf];
+}
+
+function buildBrightenPass(context) {
+  const presence = context.createBiquadFilter();
+
   presence.type = "peaking";
   presence.frequency.value = 2600;
   presence.Q.value = 0.85;
   presence.gain.value = 3;
 
+  return [presence];
+}
+
+function buildAirPass(context) {
+  const air = context.createBiquadFilter();
+
   air.type = "highshelf";
   air.frequency.value = 6200;
   air.gain.value = 4;
+
+  return [air];
+}
+
+function buildCompressionPass(context) {
+  const compressor = context.createDynamicsCompressor();
 
   compressor.threshold.value = -24;
   compressor.knee.value = 18;
@@ -289,16 +332,7 @@ async function renderFeminineVoicePass(audioBuffer) {
   compressor.attack.value = 0.012;
   compressor.release.value = 0.18;
 
-  source
-    .connect(highPass)
-    .connect(lowShelf)
-    .connect(presence)
-    .connect(air)
-    .connect(compressor)
-    .connect(context.destination);
-  source.start();
-
-  return context.startRendering();
+  return [compressor];
 }
 
 function getAnalysisSamples(audioBuffer) {
@@ -368,6 +402,52 @@ function estimatePitch(samples, sampleRate) {
   return sampleRate / bestLag;
 }
 
+function estimateVowelDuration(samples, sampleRate) {
+  const frameSize = Math.floor(sampleRate * 0.03);
+  const hopSize = Math.floor(sampleRate * 0.015);
+  let vowelLikeFrames = 0;
+  let previousWasVowel = false;
+  let segmentFrames = 0;
+  let totalSegmentFrames = 0;
+
+  for (let start = 0; start + frameSize < samples.length; start += hopSize) {
+    let sumSquares = 0;
+    let zeroCrossings = 0;
+
+    for (let index = 0; index < frameSize; index += 1) {
+      const current = samples[start + index];
+      const previous = index > 0 ? samples[start + index - 1] : current;
+      sumSquares += current * current;
+
+      if ((current >= 0 && previous < 0) || (current < 0 && previous >= 0)) {
+        zeroCrossings += 1;
+      }
+    }
+
+    const rms = Math.sqrt(sumSquares / frameSize);
+    const zeroCrossingRate = zeroCrossings / frameSize;
+    const isVowelLike = rms > 0.025 && zeroCrossingRate > 0.015 && zeroCrossingRate < 0.16;
+
+    if (isVowelLike) {
+      vowelLikeFrames += 1;
+      segmentFrames += 1;
+      previousWasVowel = true;
+    } else if (previousWasVowel) {
+      if (segmentFrames >= 2) {
+        totalSegmentFrames += segmentFrames;
+      }
+      segmentFrames = 0;
+      previousWasVowel = false;
+    }
+  }
+
+  if (segmentFrames >= 2) {
+    totalSegmentFrames += segmentFrames;
+  }
+
+  return Math.round((Math.max(vowelLikeFrames, totalSegmentFrames) * hopSize * 1000) / sampleRate);
+}
+
 function formatAmplitude(value) {
   return `${(value * 100).toFixed(1)}%`;
 }
@@ -384,6 +464,10 @@ function formatWavelength(frequency) {
   const speedOfSoundMetersPerSecond = 343;
   const meters = speedOfSoundMetersPerSecond / frequency;
   return `${meters.toFixed(2)} m`;
+}
+
+function formatMilliseconds(milliseconds) {
+  return milliseconds > 0 ? `${milliseconds} ms` : "Unclear";
 }
 
 function downloadBytes(bytes, extension, mimeType) {
@@ -552,7 +636,7 @@ async function exportAudio(extension) {
   }
 }
 
-async function feminizeVoice() {
+async function applyVoicePass(label, buildChain, fileSuffix) {
   if (!state.blob) {
     return;
   }
@@ -562,18 +646,18 @@ async function feminizeVoice() {
   ui.recordButton.disabled = true;
   ui.importCommand.disabled = true;
   ui.playButton.disabled = true;
-  setStatus("Applying feminine voice pass...");
+  setStatus(`Applying ${label}...`);
 
   try {
     const audioBuffer = await blobToAudioBuffer(state.blob);
-    const processedBuffer = await renderFeminineVoicePass(audioBuffer);
+    const processedBuffer = await renderFilterPass(audioBuffer, buildChain);
     const wavBytes = audioBufferToWavBytes(processedBuffer);
     const processedBlob = new Blob([wavBytes], { type: "audio/wav" });
 
-    setCurrentBlob(processedBlob, `${state.fileName}-feminine-pass`);
-    setStatus("Feminine voice pass ready");
+    setCurrentBlob(processedBlob, `${state.fileName}-${fileSuffix}`);
+    setStatus(`${label} ready`);
   } catch (error) {
-    setStatus(`Feminine voice pass failed: ${error.message}`);
+    setStatus(`${label} failed: ${error.message}`);
   } finally {
     ui.recordButton.disabled = false;
     ui.importCommand.disabled = false;
@@ -596,11 +680,13 @@ async function analyzeVoice() {
     const samples = getAnalysisSamples(audioBuffer);
     const amplitude = analyzeAmplitude(samples);
     const pitch = estimatePitch(samples, audioBuffer.sampleRate);
+    const vowelDuration = estimateVowelDuration(samples, audioBuffer.sampleRate);
 
     ui.peakAmplitude.textContent = formatAmplitude(amplitude.peak);
     ui.rmsAmplitude.textContent = formatAmplitude(amplitude.rms);
     ui.pitchValue.textContent = formatPitch(pitch);
     ui.wavelengthValue.textContent = formatWavelength(pitch);
+    ui.vowelDurationValue.textContent = formatMilliseconds(vowelDuration);
     ui.analysisPanel.hidden = false;
     setStatus("Analysis ready");
   } catch (error) {
@@ -614,7 +700,16 @@ function wireEvents() {
   ui.importCommand.addEventListener("click", importAudio);
   ui.exportWavCommand.addEventListener("click", () => exportAudio("wav"));
   ui.exportMp3Command.addEventListener("click", () => exportAudio("mp3"));
-  ui.feminizeCommand.addEventListener("click", feminizeVoice);
+  ui.cleanLowsCommand.addEventListener("click", () =>
+    applyVoicePass("Clean lows pass", buildCleanLowsPass, "clean-lows")
+  );
+  ui.brightenCommand.addEventListener("click", () =>
+    applyVoicePass("Brighten presence pass", buildBrightenPass, "bright-presence")
+  );
+  ui.airCommand.addEventListener("click", () => applyVoicePass("Air pass", buildAirPass, "air"));
+  ui.compressCommand.addEventListener("click", () =>
+    applyVoicePass("Compression pass", buildCompressionPass, "compressed")
+  );
   ui.analyzeCommand.addEventListener("click", analyzeVoice);
   ui.fileInput.addEventListener("change", handleFileImport);
   ui.exportMenuItem.addEventListener("mouseenter", () => {
