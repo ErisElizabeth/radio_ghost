@@ -217,6 +217,26 @@ audio {
   width: 100%;
 }
 
+.spectrogram-panel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(242, 232, 216, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--control);
+}
+
+.spectrogram-panel[hidden] {
+  display: none;
+}
+
+.spectrogram-panel canvas {
+  width: 100%;
+  height: 220px;
+  border-radius: 6px;
+  background: #09090d;
+}
+
 .analysis-panel {
   display: grid;
   flex: 0 1 430px;

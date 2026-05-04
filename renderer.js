@@ -23,10 +23,13 @@ const ui = {
   pitchValue: document.querySelector("#pitchValue"),
   wavelengthValue: document.querySelector("#wavelengthValue"),
   vowelDurationValue: document.querySelector("#vowelDurationValue"),
-  pitchRangeValue: document.querySelector("#pitchRangeValue")
+  pitchRangeValue: document.querySelector("#pitchRangeValue"),
+  spectrogramPanel: document.querySelector("#spectrogramPanel"),
+  spectrogramCanvas: document.querySelector("#spectrogramCanvas")
 };
 
 const meterContext = ui.meter.getContext("2d");
+const spectrogramContext = ui.spectrogramCanvas.getContext("2d");
 
 const state = {
   recorder: null,
@@ -87,6 +90,7 @@ function setCurrentBlob(blob, fileName) {
   ui.player.load();
   ui.playButton.disabled = false;
   ui.analysisPanel.hidden = true;
+  ui.spectrogramPanel.hidden = true;
   setExportReady(true);
   setVoiceReady(true);
 }
@@ -517,6 +521,51 @@ function classifyPitchRange(frequency) {
   return "Outside typical range";
 }
 
+function drawSpectrogram(audioBuffer) {
+  const canvas = ui.spectrogramCanvas;
+  const width = canvas.width;
+  const height = canvas.height;
+  const samples = getAnalysisSamples(audioBuffer);
+  const frameSize = 1024;
+  const binCount = 96;
+  const maxFrequency = 5000;
+  const maxBin = Math.floor((maxFrequency * frameSize) / audioBuffer.sampleRate);
+  const usableBins = Math.max(12, Math.min(binCount, maxBin));
+
+  spectrogramContext.clearRect(0, 0, width, height);
+  spectrogramContext.fillStyle = "#09090d";
+  spectrogramContext.fillRect(0, 0, width, height);
+
+  for (let column = 0; column < width; column += 1) {
+    const start = Math.floor((column / width) * Math.max(1, samples.length - frameSize));
+
+    for (let bin = 1; bin <= usableBins; bin += 1) {
+      let real = 0;
+      let imaginary = 0;
+      const angleBase = (2 * Math.PI * bin) / frameSize;
+
+      for (let index = 0; index < frameSize; index += 1) {
+        const sample = samples[start + index] || 0;
+        const windowValue = 0.5 - 0.5 * Math.cos((2 * Math.PI * index) / (frameSize - 1));
+        const angle = angleBase * index;
+        real += sample * windowValue * Math.cos(angle);
+        imaginary -= sample * windowValue * Math.sin(angle);
+      }
+
+      const magnitude = Math.sqrt(real * real + imaginary * imaginary) / frameSize;
+      const intensity = Math.min(1, Math.log10(1 + magnitude * 900));
+      const y = height - Math.floor((bin / usableBins) * height);
+      const hue = 174 - intensity * 42;
+      const lightness = 10 + intensity * 58;
+
+      spectrogramContext.fillStyle = `hsl(${hue}, 58%, ${lightness}%)`;
+      spectrogramContext.fillRect(column, y, 1, Math.ceil(height / usableBins) + 1);
+    }
+  }
+
+  ui.spectrogramPanel.hidden = false;
+}
+
 function downloadBytes(bytes, extension, mimeType) {
   const blob = new Blob([bytes], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -702,7 +751,7 @@ async function applyVoicePass(label, buildChain, fileSuffix) {
     const processedBlob = new Blob([wavBytes], { type: "audio/wav" });
 
     setCurrentBlob(processedBlob, `${state.fileName}-${fileSuffix}`);
-    setStatus(`${label} ready`);
+    await updateAnalysisForCurrentClip(`${label} ready`);
   } catch (error) {
     setStatus(`${label} failed: ${error.message}`);
   } finally {
@@ -747,7 +796,7 @@ async function pitchToFemaleFloor() {
     const processedBlob = new Blob([wavBytes], { type: "audio/wav" });
 
     setCurrentBlob(processedBlob, `${state.fileName}-pitch-165hz`);
-    setStatus(`Pitch shifted from ${pitch.toFixed(1)} Hz toward 165 Hz`);
+    await updateAnalysisForCurrentClip(`Pitch shifted from ${pitch.toFixed(1)} Hz toward 165 Hz`);
   } catch (error) {
     setStatus(`Pitch to 165 Hz failed: ${error.message}`);
   } finally {
@@ -759,6 +808,28 @@ async function pitchToFemaleFloor() {
   }
 }
 
+async function updateAnalysisForCurrentClip(successMessage = "Analysis ready") {
+  if (!state.blob) {
+    return;
+  }
+
+  const audioBuffer = await blobToAudioBuffer(state.blob);
+  const samples = getAnalysisSamples(audioBuffer);
+  const amplitude = analyzeAmplitude(samples);
+  const pitch = estimatePitch(samples, audioBuffer.sampleRate);
+  const vowelDuration = estimateVowelDuration(samples, audioBuffer.sampleRate);
+
+  ui.peakAmplitude.textContent = formatAmplitude(amplitude.peak);
+  ui.rmsAmplitude.textContent = formatAmplitude(amplitude.rms);
+  ui.pitchValue.textContent = formatPitch(pitch);
+  ui.wavelengthValue.textContent = formatWavelength(pitch);
+  ui.vowelDurationValue.textContent = formatVowelDuration(vowelDuration);
+  ui.pitchRangeValue.textContent = classifyPitchRange(pitch);
+  ui.analysisPanel.hidden = false;
+  drawSpectrogram(audioBuffer);
+  setStatus(successMessage);
+}
+
 async function analyzeVoice() {
   if (!state.blob) {
     return;
@@ -768,20 +839,7 @@ async function analyzeVoice() {
   setStatus("Analyzing audio...");
 
   try {
-    const audioBuffer = await blobToAudioBuffer(state.blob);
-    const samples = getAnalysisSamples(audioBuffer);
-    const amplitude = analyzeAmplitude(samples);
-    const pitch = estimatePitch(samples, audioBuffer.sampleRate);
-    const vowelDuration = estimateVowelDuration(samples, audioBuffer.sampleRate);
-
-    ui.peakAmplitude.textContent = formatAmplitude(amplitude.peak);
-    ui.rmsAmplitude.textContent = formatAmplitude(amplitude.rms);
-    ui.pitchValue.textContent = formatPitch(pitch);
-    ui.wavelengthValue.textContent = formatWavelength(pitch);
-    ui.vowelDurationValue.textContent = formatVowelDuration(vowelDuration);
-    ui.pitchRangeValue.textContent = classifyPitchRange(pitch);
-    ui.analysisPanel.hidden = false;
-    setStatus("Analysis ready");
+    await updateAnalysisForCurrentClip("Analysis ready");
   } catch (error) {
     setStatus(`Analysis failed: ${error.message}`);
   } finally {
