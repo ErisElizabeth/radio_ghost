@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Ghost</title>
-    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.9" />
+    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.10" />
   </head>
   <body>
     <nav class="menu-bar" aria-label="Application menu">
@@ -40,29 +40,44 @@
           <p id="status">Ready to record</p>
         </div>
         <div class="ghost-signal" aria-hidden="true">
-          <svg viewBox="0 0 1000 120" preserveAspectRatio="none">
-            <path
-              class="ghost-wave ghost-wave-glow"
-              d="M 0 60
-                 C 50 42, 100 42, 150 60
-                 C 200 78, 250 78, 300 60
-                 C 350 42, 400 42, 450 60
-                 C 500 78, 550 78, 600 60
-                 C 650 42, 700 42, 750 60
-                 C 800 78, 850 78, 900 60
-                 C 950 42, 1000 42, 1050 60"
-            />
-            <path
-              class="ghost-wave ghost-wave-core"
-              d="M 0 60
-                 C 50 42, 100 42, 150 60
-                 C 200 78, 250 78, 300 60
-                 C 350 42, 400 42, 450 60
-                 C 500 78, 550 78, 600 60
-                 C 650 42, 700 42, 750 60
-                 C 800 78, 850 78, 900 60
-                 C 950 42, 1000 42, 1050 60"
-            />
+          <svg viewBox="0 0 1000 180" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="waveTaper" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="black" stop-opacity="0" />
+                <stop offset="14%" stop-color="white" stop-opacity="1" />
+                <stop offset="86%" stop-color="white" stop-opacity="1" />
+                <stop offset="100%" stop-color="black" stop-opacity="0" />
+              </linearGradient>
+
+              <mask id="taperMask">
+                <rect width="100%" height="100%" fill="url(#waveTaper)" />
+              </mask>
+            </defs>
+
+            <g class="wave-bob" mask="url(#taperMask)">
+              <path
+                class="wave wave-soft-glow"
+                d="M 0 90
+                   C 50 74, 100 74, 150 90
+                   C 200 106, 250 106, 300 90
+                   C 350 74, 400 74, 450 90
+                   C 500 106, 550 106, 600 90
+                   C 650 74, 700 74, 750 90
+                   C 800 106, 850 106, 900 90
+                   C 950 74, 1000 74, 1050 90"
+              />
+              <path
+                class="wave wave-core"
+                d="M 0 90
+                   C 50 74, 100 74, 150 90
+                   C 200 106, 250 106, 300 90
+                   C 350 74, 400 74, 450 90
+                   C 500 106, 550 106, 600 90
+                   C 650 74, 700 74, 750 90
+                   C 800 106, 850 106, 900 90
+                   C 950 74, 1000 74, 1050 90"
+              />
+            </g>
           </svg>
         </div>
       </header>
@@ -91,7 +106,7 @@
       </section>
     </main>
 
-    <script src="vendor/lame.min.js?v=0.1.0-alpha.9"></script>
-    <script src="renderer.js?v=0.1.0-alpha.9"></script>
+    <script src="vendor/lame.min.js?v=0.1.0-alpha.10"></script>
+    <script src="renderer.js?v=0.1.0-alpha.10"></script>
   </body>
 </html>
