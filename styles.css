@@ -10,8 +10,7 @@
   --playing: #4f8f6b;
   color: var(--primary-text);
   background: var(--background);
-  font-family:
-    Metropolis, "Metropolis Regular", Montserrat, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  font-family: Limelight, "Limelight Regular", Georgia, "Times New Roman", serif;
 }
 
 * {
@@ -125,10 +124,20 @@ button:hover:not(:disabled) {
   left: calc(100% + 6px);
 }
 
+.submenu::after {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  width: 14px;
+  height: calc(100% + 16px);
+  content: "";
+}
+
 .menu:hover .menu-list,
 .menu:focus-within .menu-list,
 .submenu:hover .submenu-list,
-.submenu:focus-within .submenu-list {
+.submenu:focus-within .submenu-list,
+.submenu.is-open .submenu-list {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
@@ -170,6 +179,7 @@ button:hover:not(:disabled) {
 }
 
 .topbar {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -192,6 +202,42 @@ p {
   margin: 8px 0 0;
   color: var(--muted-text);
   font-size: 16px;
+}
+
+.ghost-signal {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(34vw, 320px);
+  height: 80px;
+  overflow: hidden;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.ghost-signal::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 50%, #9edbd3 0 2px, transparent 3px),
+    radial-gradient(circle at 40% 45%, #9edbd3 0 2px, transparent 3px),
+    radial-gradient(circle at 60% 55%, #9edbd3 0 2px, transparent 3px),
+    radial-gradient(circle at 80% 48%, #9edbd3 0 2px, transparent 3px);
+  content: "";
+  filter: drop-shadow(0 0 8px #9edbd3);
+  animation: ghost-drift 4s ease-in-out infinite alternate;
+}
+
+@keyframes ghost-drift {
+  from {
+    transform: translateX(-12px) scaleY(0.8);
+    opacity: 0.35;
+  }
+
+  to {
+    transform: translateX(12px) scaleY(1.25);
+    opacity: 0.9;
+  }
 }
 
 .recorder-panel {
@@ -269,6 +315,22 @@ audio {
 
 .play-icon {
   mask-image: url("assets/music-play-play-button-svgrepo-com.svg");
+}
+
+.stop-icon {
+  mask-image: url("assets/music-player-stop-svgrepo-com.svg");
+}
+
+.stop-button {
+  background: var(--control);
+}
+
+.stop-button:hover:not(:disabled) {
+  background: #24202b;
+}
+
+.stop-button:active:not(:disabled) {
+  background: #0f0d13;
 }
 
 .record-button.is-recording {

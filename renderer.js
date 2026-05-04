@@ -1,5 +1,6 @@
 const ui = {
   importCommand: document.querySelector("#importCommand"),
+  exportMenuItem: document.querySelector("#exportMenuItem"),
   exportWavCommand: document.querySelector("#exportWavCommand"),
   exportMp3Command: document.querySelector("#exportMp3Command"),
   recordButton: document.querySelector("#recordButton"),
@@ -30,6 +31,8 @@ const state = {
   recordingMimeType: "audio/webm"
 };
 
+let exportMenuCloseTimer = null;
+
 function setStatus(message) {
   ui.status.textContent = message;
 }
@@ -42,7 +45,7 @@ function setExportReady(isReady) {
 function setRecordingControls(isRecording) {
   ui.recordButton.disabled = isRecording;
   ui.importCommand.disabled = isRecording;
-  ui.stopButton.disabled = !isRecording;
+  ui.stopButton.disabled = !isRecording && ui.player.paused;
   ui.playButton.disabled = isRecording || !state.blob;
   ui.recordButton.classList.toggle("is-recording", isRecording);
   setExportReady(!isRecording && Boolean(state.blob));
@@ -330,8 +333,7 @@ async function startRecording() {
 
 function stopRecording() {
   if (!state.recorder || state.recorder.state === "inactive") {
-    setStatus("No active recording to stop");
-    setRecordingControls(false);
+    stopPlayback();
     return;
   }
 
@@ -345,6 +347,20 @@ function stopRecording() {
   }
 
   state.recorder.stop();
+}
+
+function stopPlayback() {
+  if (ui.player.paused) {
+    setStatus("No active playback to stop");
+    setRecordingControls(false);
+    return;
+  }
+
+  ui.player.pause();
+  ui.player.currentTime = 0;
+  ui.playButton.classList.remove("is-playing");
+  ui.stopButton.disabled = true;
+  setStatus("Playback stopped");
 }
 
 function importAudio() {
@@ -391,6 +407,15 @@ function wireEvents() {
   ui.exportWavCommand.addEventListener("click", () => exportAudio("wav"));
   ui.exportMp3Command.addEventListener("click", () => exportAudio("mp3"));
   ui.fileInput.addEventListener("change", handleFileImport);
+  ui.exportMenuItem.addEventListener("mouseenter", () => {
+    clearTimeout(exportMenuCloseTimer);
+    ui.exportMenuItem.classList.add("is-open");
+  });
+  ui.exportMenuItem.addEventListener("mouseleave", () => {
+    exportMenuCloseTimer = setTimeout(() => {
+      ui.exportMenuItem.classList.remove("is-open");
+    }, 2000);
+  });
 
   ui.recordButton.addEventListener("click", async () => {
     try {
@@ -404,9 +429,20 @@ function wireEvents() {
 
   ui.stopButton.addEventListener("click", stopRecording);
   ui.playButton.addEventListener("click", () => ui.player.play());
-  ui.player.addEventListener("play", () => ui.playButton.classList.add("is-playing"));
-  ui.player.addEventListener("pause", () => ui.playButton.classList.remove("is-playing"));
-  ui.player.addEventListener("ended", () => ui.playButton.classList.remove("is-playing"));
+  ui.player.addEventListener("play", () => {
+    ui.playButton.classList.add("is-playing");
+    ui.stopButton.disabled = false;
+  });
+  ui.player.addEventListener("pause", () => {
+    ui.playButton.classList.remove("is-playing");
+    if (!state.recorder || state.recorder.state === "inactive") {
+      ui.stopButton.disabled = true;
+    }
+  });
+  ui.player.addEventListener("ended", () => {
+    ui.playButton.classList.remove("is-playing");
+    ui.stopButton.disabled = true;
+  });
 }
 
 function boot() {

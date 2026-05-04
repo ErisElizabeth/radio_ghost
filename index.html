@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Ghost</title>
-    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.4" />
+    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.8" />
   </head>
   <body>
     <nav class="menu-bar" aria-label="Application menu">
@@ -12,7 +12,7 @@
         <button id="fileMenuButton" class="menu-button" type="button">File</button>
         <div class="menu-list" aria-label="File menu">
           <button id="importCommand" class="menu-command" type="button">Import</button>
-          <div class="menu-command submenu">
+          <div id="exportMenuItem" class="menu-command submenu">
             <span>Export</span>
             <span aria-hidden="true">></span>
             <div class="submenu-list" aria-label="Export menu">
@@ -28,8 +28,8 @@
       </div>
       <div class="window-controls" aria-label="Window controls">
         <button class="window-control" type="button" aria-label="Minimize" title="Minimize">-</button>
-        <button class="window-control" type="button" aria-label="Maximize" title="Maximize">□</button>
-        <button class="window-control close" type="button" aria-label="Close" title="Close">×</button>
+        <button class="window-control" type="button" aria-label="Maximize" title="Maximize">[]</button>
+        <button class="window-control close" type="button" aria-label="Close" title="Close">X</button>
       </div>
     </nav>
 
@@ -39,6 +39,7 @@
           <h1>Radio Ghost</h1>
           <p id="status">Ready to record</p>
         </div>
+        <div class="ghost-signal" aria-hidden="true"></div>
       </header>
 
       <section class="recorder-panel" aria-label="Recorder">
@@ -52,7 +53,9 @@
           <button id="recordButton" class="icon-button record-button" type="button" aria-label="Record" title="Record">
             <span class="button-icon mic-icon" aria-hidden="true"></span>
           </button>
-          <button id="stopButton" type="button" disabled>Stop</button>
+          <button id="stopButton" class="icon-button stop-button" type="button" aria-label="Stop" title="Stop" disabled>
+            <span class="button-icon stop-icon" aria-hidden="true"></span>
+          </button>
           <button id="playButton" class="icon-button play-button" type="button" aria-label="Play" title="Play" disabled>
             <span class="button-icon play-icon" aria-hidden="true"></span>
           </button>
@@ -63,7 +66,7 @@
       </section>
     </main>
 
-    <script src="vendor/lame.min.js?v=0.1.0-alpha.4"></script>
-    <script src="renderer.js?v=0.1.0-alpha.4"></script>
+    <script src="vendor/lame.min.js?v=0.1.0-alpha.8"></script>
+    <script src="renderer.js?v=0.1.0-alpha.8"></script>
   </body>
 </html>
