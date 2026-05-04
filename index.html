@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Ghost</title>
-    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.19" />
+    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.22" />
   </head>
   <body>
     <nav class="menu-bar" aria-label="Application menu">
@@ -41,6 +41,9 @@
           <button id="compressCommand" class="menu-command" type="button" disabled>
             Compress
           </button>
+          <button id="pitchToFemaleFloorCommand" class="menu-command" type="button" disabled>
+            Pitch to 165 Hz
+          </button>
           <button id="analyzeCommand" class="menu-command" type="button" disabled>
             Analyze
           </button>
@@ -72,8 +75,12 @@
             <strong id="wavelengthValue">--</strong>
           </div>
           <div>
-            <span class="analysis-label">Vowel duration</span>
+            <span class="analysis-label">Avg vowel duration</span>
             <strong id="vowelDurationValue">--</strong>
+          </div>
+          <div>
+            <span class="analysis-label">Pitch range</span>
+            <strong id="pitchRangeValue">--</strong>
           </div>
         </section>
       </header>
@@ -103,7 +110,7 @@
       </section>
     </main>
 
-    <script src="vendor/lame.min.js?v=0.1.0-alpha.19"></script>
-    <script src="renderer.js?v=0.1.0-alpha.19"></script>
+    <script src="vendor/lame.min.js?v=0.1.0-alpha.22"></script>
+    <script src="renderer.js?v=0.1.0-alpha.22"></script>
   </body>
 </html>

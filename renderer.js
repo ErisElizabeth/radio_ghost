@@ -7,6 +7,7 @@ const ui = {
   brightenCommand: document.querySelector("#brightenCommand"),
   airCommand: document.querySelector("#airCommand"),
   compressCommand: document.querySelector("#compressCommand"),
+  pitchToFemaleFloorCommand: document.querySelector("#pitchToFemaleFloorCommand"),
   analyzeCommand: document.querySelector("#analyzeCommand"),
   recordButton: document.querySelector("#recordButton"),
   stopButton: document.querySelector("#stopButton"),
@@ -21,7 +22,8 @@ const ui = {
   rmsAmplitude: document.querySelector("#rmsAmplitude"),
   pitchValue: document.querySelector("#pitchValue"),
   wavelengthValue: document.querySelector("#wavelengthValue"),
-  vowelDurationValue: document.querySelector("#vowelDurationValue")
+  vowelDurationValue: document.querySelector("#vowelDurationValue"),
+  pitchRangeValue: document.querySelector("#pitchRangeValue")
 };
 
 const meterContext = ui.meter.getContext("2d");
@@ -58,6 +60,7 @@ function setVoiceReady(isReady) {
   ui.brightenCommand.disabled = !isReady;
   ui.airCommand.disabled = !isReady;
   ui.compressCommand.disabled = !isReady;
+  ui.pitchToFemaleFloorCommand.disabled = !isReady;
   ui.analyzeCommand.disabled = !isReady;
 }
 
@@ -287,6 +290,23 @@ async function renderFilterPass(audioBuffer, buildChain) {
   return context.startRendering();
 }
 
+async function renderPitchShiftPass(audioBuffer, playbackRate) {
+  const renderedLength = Math.max(1, Math.ceil(audioBuffer.length / playbackRate));
+  const context = new OfflineAudioContext(
+    audioBuffer.numberOfChannels,
+    renderedLength,
+    audioBuffer.sampleRate
+  );
+  const source = context.createBufferSource();
+
+  source.buffer = audioBuffer;
+  source.playbackRate.value = playbackRate;
+  source.connect(context.destination);
+  source.start();
+
+  return context.startRendering();
+}
+
 function buildCleanLowsPass(context) {
   const highPass = context.createBiquadFilter();
   const lowShelf = context.createBiquadFilter();
@@ -405,10 +425,9 @@ function estimatePitch(samples, sampleRate) {
 function estimateVowelDuration(samples, sampleRate) {
   const frameSize = Math.floor(sampleRate * 0.03);
   const hopSize = Math.floor(sampleRate * 0.015);
-  let vowelLikeFrames = 0;
   let previousWasVowel = false;
   let segmentFrames = 0;
-  let totalSegmentFrames = 0;
+  const segmentDurations = [];
 
   for (let start = 0; start + frameSize < samples.length; start += hopSize) {
     let sumSquares = 0;
@@ -429,12 +448,11 @@ function estimateVowelDuration(samples, sampleRate) {
     const isVowelLike = rms > 0.025 && zeroCrossingRate > 0.015 && zeroCrossingRate < 0.16;
 
     if (isVowelLike) {
-      vowelLikeFrames += 1;
       segmentFrames += 1;
       previousWasVowel = true;
     } else if (previousWasVowel) {
       if (segmentFrames >= 2) {
-        totalSegmentFrames += segmentFrames;
+        segmentDurations.push((segmentFrames * hopSize * 1000) / sampleRate);
       }
       segmentFrames = 0;
       previousWasVowel = false;
@@ -442,10 +460,19 @@ function estimateVowelDuration(samples, sampleRate) {
   }
 
   if (segmentFrames >= 2) {
-    totalSegmentFrames += segmentFrames;
+    segmentDurations.push((segmentFrames * hopSize * 1000) / sampleRate);
   }
 
-  return Math.round((Math.max(vowelLikeFrames, totalSegmentFrames) * hopSize * 1000) / sampleRate);
+  if (segmentDurations.length === 0) {
+    return null;
+  }
+
+  const totalDuration = segmentDurations.reduce((total, duration) => total + duration, 0);
+  return {
+    averageMs: Math.round(totalDuration / segmentDurations.length),
+    count: segmentDurations.length,
+    totalMs: Math.round(totalDuration)
+  };
 }
 
 function formatAmplitude(value) {
@@ -466,8 +493,28 @@ function formatWavelength(frequency) {
   return `${meters.toFixed(2)} m`;
 }
 
-function formatMilliseconds(milliseconds) {
-  return milliseconds > 0 ? `${milliseconds} ms` : "Unclear";
+function formatVowelDuration(result) {
+  return result ? `${result.averageMs} ms avg (${result.count})` : "Unclear";
+}
+
+function classifyPitchRange(frequency) {
+  if (!frequency) {
+    return "Unclear";
+  }
+
+  if (frequency >= 165 && frequency <= 180) {
+    return "Typically neutral";
+  }
+
+  if (frequency >= 85 && frequency < 165) {
+    return "Typically male";
+  }
+
+  if (frequency > 180 && frequency <= 255) {
+    return "Typically female";
+  }
+
+  return "Outside typical range";
 }
 
 function downloadBytes(bytes, extension, mimeType) {
@@ -667,6 +714,51 @@ async function applyVoicePass(label, buildChain, fileSuffix) {
   }
 }
 
+async function pitchToFemaleFloor() {
+  if (!state.blob) {
+    return;
+  }
+
+  setExportReady(false);
+  setVoiceReady(false);
+  ui.recordButton.disabled = true;
+  ui.importCommand.disabled = true;
+  ui.playButton.disabled = true;
+  setStatus("Analyzing pitch for 165 Hz pass...");
+
+  try {
+    const audioBuffer = await blobToAudioBuffer(state.blob);
+    const samples = getAnalysisSamples(audioBuffer);
+    const pitch = estimatePitch(samples, audioBuffer.sampleRate);
+
+    if (!pitch) {
+      setStatus("Pitch to 165 Hz failed: pitch unclear");
+      return;
+    }
+
+    if (pitch >= 165 && pitch <= 255) {
+      setStatus("Pitch already in typical female range");
+      return;
+    }
+
+    const playbackRate = 165 / pitch;
+    const processedBuffer = await renderPitchShiftPass(audioBuffer, playbackRate);
+    const wavBytes = audioBufferToWavBytes(processedBuffer);
+    const processedBlob = new Blob([wavBytes], { type: "audio/wav" });
+
+    setCurrentBlob(processedBlob, `${state.fileName}-pitch-165hz`);
+    setStatus(`Pitch shifted from ${pitch.toFixed(1)} Hz toward 165 Hz`);
+  } catch (error) {
+    setStatus(`Pitch to 165 Hz failed: ${error.message}`);
+  } finally {
+    ui.recordButton.disabled = false;
+    ui.importCommand.disabled = false;
+    ui.playButton.disabled = !state.blob;
+    setExportReady(Boolean(state.blob));
+    setVoiceReady(Boolean(state.blob));
+  }
+}
+
 async function analyzeVoice() {
   if (!state.blob) {
     return;
@@ -686,7 +778,8 @@ async function analyzeVoice() {
     ui.rmsAmplitude.textContent = formatAmplitude(amplitude.rms);
     ui.pitchValue.textContent = formatPitch(pitch);
     ui.wavelengthValue.textContent = formatWavelength(pitch);
-    ui.vowelDurationValue.textContent = formatMilliseconds(vowelDuration);
+    ui.vowelDurationValue.textContent = formatVowelDuration(vowelDuration);
+    ui.pitchRangeValue.textContent = classifyPitchRange(pitch);
     ui.analysisPanel.hidden = false;
     setStatus("Analysis ready");
   } catch (error) {
@@ -710,6 +803,7 @@ function wireEvents() {
   ui.compressCommand.addEventListener("click", () =>
     applyVoicePass("Compression pass", buildCompressionPass, "compressed")
   );
+  ui.pitchToFemaleFloorCommand.addEventListener("click", pitchToFemaleFloor);
   ui.analyzeCommand.addEventListener("click", analyzeVoice);
   ui.fileInput.addEventListener("change", handleFileImport);
   ui.exportMenuItem.addEventListener("mouseenter", () => {
