@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radio Ghost</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar">
+        <div>
+          <h1>Radio Ghost</h1>
+          <p id="status">Ready to record</p>
+        </div>
+        <span class="badge">Windows desktop app</span>
+      </section>
+
+      <section class="recorder-panel">
+        <div class="meter-wrap" aria-label="Input level">
+          <canvas id="meter" width="760" height="160"></canvas>
+        </div>
+
+        <div class="timer" id="timer">00:00.0</div>
+
+        <div class="controls">
+          <button id="recordBtn" class="primary" type="button">Record</button>
+          <button id="importBtn" type="button">Import</button>
+          <button id="stopBtn" type="button" disabled>Stop</button>
+          <button id="playBtn" type="button" disabled>Play</button>
+          <button id="exportWavBtn" type="button" disabled>Export WAV</button>
+          <button id="exportMp3Btn" type="button" disabled>Export MP3</button>
+        </div>
+
+        <audio id="player" controls></audio>
+      </section>
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>
