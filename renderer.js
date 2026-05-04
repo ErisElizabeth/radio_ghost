@@ -1,10 +1,10 @@
 const recordBtn = document.querySelector("#recordBtn");
-const importBtn = document.querySelector("#importBtn");
+const menuImportBtn = document.querySelector("#menuImportBtn");
 const fileInput = document.querySelector("#fileInput");
 const stopBtn = document.querySelector("#stopBtn");
 const playBtn = document.querySelector("#playBtn");
-const exportWavBtn = document.querySelector("#exportWavBtn");
-const exportMp3Btn = document.querySelector("#exportMp3Btn");
+const menuExportWavBtn = document.querySelector("#menuExportWavBtn");
+const menuExportMp3Btn = document.querySelector("#menuExportMp3Btn");
 const player = document.querySelector("#player");
 const statusText = document.querySelector("#status");
 const timer = document.querySelector("#timer");
@@ -40,13 +40,13 @@ function setPlayerBlob(blob, fileName = "radio-ghost") {
   player.src = currentObjectUrl;
   player.load();
   playBtn.disabled = false;
-  exportWavBtn.disabled = false;
-  exportMp3Btn.disabled = false;
+  menuExportWavBtn.disabled = false;
+  menuExportMp3Btn.disabled = false;
 }
 
 function setExportDisabled(isDisabled) {
-  exportWavBtn.disabled = isDisabled;
-  exportMp3Btn.disabled = isDisabled;
+  menuExportWavBtn.disabled = isDisabled;
+  menuExportMp3Btn.disabled = isDisabled;
 }
 
 function formatDuration(milliseconds) {
@@ -269,7 +269,7 @@ async function startRecording() {
   mediaRecorder.start(250);
   recordingStartedAt = Date.now();
   recordBtn.disabled = true;
-  importBtn.disabled = true;
+  menuImportBtn.disabled = true;
   stopBtn.disabled = false;
   playBtn.disabled = true;
   setExportDisabled(true);
@@ -282,7 +282,7 @@ function resetRecordingControls() {
   cancelAnimationFrame(timerFrame);
   cancelAnimationFrame(meterFrame);
   recordBtn.disabled = false;
-  importBtn.disabled = false;
+  menuImportBtn.disabled = false;
   stopBtn.disabled = true;
 
   if (inputStream) {
@@ -348,7 +348,7 @@ function stopRecording() {
   if (!mediaRecorder || mediaRecorder.state === "inactive") {
     stopBtn.disabled = true;
     recordBtn.disabled = false;
-    importBtn.disabled = false;
+    menuImportBtn.disabled = false;
     setStatus("No active recording to stop");
     return;
   }
@@ -394,17 +394,17 @@ recordBtn.addEventListener("click", async () => {
   } catch (error) {
     setStatus(`Microphone error: ${error.message}`);
     recordBtn.disabled = false;
-    importBtn.disabled = false;
+    menuImportBtn.disabled = false;
     stopBtn.disabled = true;
   }
 });
 
-importBtn.addEventListener("click", importAudio);
+menuImportBtn.addEventListener("click", importAudio);
 stopBtn.addEventListener("click", stopRecording);
 stopBtn.onclick = stopRecording;
 playBtn.addEventListener("click", () => player.play());
-exportWavBtn.addEventListener("click", () => exportAudio("wav"));
-exportMp3Btn.addEventListener("click", () => exportAudio("mp3"));
+menuExportWavBtn.addEventListener("click", () => exportAudio("wav"));
+menuExportMp3Btn.addEventListener("click", () => exportAudio("mp3"));
 
 if (fileInput) {
   fileInput.addEventListener("change", handleImportedFile);

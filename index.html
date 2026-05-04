@@ -7,6 +7,31 @@
     <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.2" />
   </head>
   <body>
+    <nav class="menu-bar" aria-label="Application menu">
+      <div class="menu-item">
+        <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+          File
+        </button>
+        <div class="menu-panel" role="menu">
+          <button id="menuImportBtn" class="menu-command" type="button" role="menuitem">
+            Import
+          </button>
+          <div class="menu-command has-submenu" role="menuitem" aria-haspopup="true">
+            <span>Export</span>
+            <span aria-hidden="true">></span>
+            <div class="submenu-panel" role="menu">
+              <button id="menuExportWavBtn" class="menu-command" type="button" role="menuitem" disabled>
+                WAV
+              </button>
+              <button id="menuExportMp3Btn" class="menu-command" type="button" role="menuitem" disabled>
+                MP3
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
     <main class="app-shell">
       <section class="topbar">
         <div>
@@ -25,11 +50,8 @@
 
         <div class="controls">
           <button id="recordBtn" class="primary" type="button">Record</button>
-          <button id="importBtn" type="button">Import</button>
           <button id="stopBtn" type="button" disabled>Stop</button>
           <button id="playBtn" type="button" disabled>Play</button>
-          <button id="exportWavBtn" type="button" disabled>Export WAV</button>
-          <button id="exportMp3Btn" type="button" disabled>Export MP3</button>
         </div>
         <input id="fileInput" type="file" accept=".wav,.mp3,audio/wav,audio/mpeg" hidden />
 
