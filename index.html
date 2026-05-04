@@ -13,7 +13,7 @@
           <h1>Radio Ghost</h1>
           <p id="status">Ready to record</p>
         </div>
-        <span class="badge">Windows desktop app</span>
+        <span class="badge">Standalone web app</span>
       </section>
 
       <section class="recorder-panel">
@@ -31,11 +31,13 @@
           <button id="exportWavBtn" type="button" disabled>Export WAV</button>
           <button id="exportMp3Btn" type="button" disabled>Export MP3</button>
         </div>
+        <input id="fileInput" type="file" accept=".wav,.mp3,audio/wav,audio/mpeg" hidden />
 
         <audio id="player" controls></audio>
       </section>
     </main>
 
+    <script src="vendor/lame.min.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

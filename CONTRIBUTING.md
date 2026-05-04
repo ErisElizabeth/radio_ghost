@@ -15,7 +15,6 @@ Run this before committing:
 
 ```powershell
 npm run check
-npm audit --omit=optional
 ```
 
 ## Pull Requests
