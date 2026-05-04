@@ -42,6 +42,97 @@ button.primary {
   color: #101316;
 }
 
+.menu-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  min-height: 38px;
+  border-bottom: 1px solid rgba(242, 237, 247, 0.12);
+  background: rgba(12, 10, 16, 0.94);
+  backdrop-filter: blur(14px);
+  padding: 0 14px;
+}
+
+.menu-item {
+  position: relative;
+}
+
+.menu-trigger,
+.menu-command {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #f2edf7;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.menu-trigger {
+  height: 38px;
+  padding: 0 14px;
+}
+
+.menu-command {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 9px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.menu-trigger:hover,
+.menu-item:focus-within .menu-trigger,
+.menu-item:hover .menu-trigger,
+.menu-command:hover,
+.has-submenu:hover {
+  background: rgba(104, 214, 200, 0.14);
+}
+
+.menu-panel,
+.submenu-panel {
+  position: absolute;
+  min-width: 168px;
+  border: 1px solid rgba(242, 237, 247, 0.14);
+  border-radius: 8px;
+  background: #16131d;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  padding: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.menu-panel {
+  top: 38px;
+  left: 0;
+}
+
+.submenu-panel {
+  top: -7px;
+  left: calc(100% + 6px);
+}
+
+.menu-item:hover .menu-panel,
+.menu-item:focus-within .menu-panel,
+.has-submenu:hover .submenu-panel,
+.has-submenu:focus-within .submenu-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.menu-command:disabled {
+  opacity: 0.38;
+}
+
 .app-shell {
   width: min(1040px, calc(100vw - 32px));
   margin: 0 auto;
