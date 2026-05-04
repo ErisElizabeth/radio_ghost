@@ -414,7 +414,7 @@ function wireEvents() {
   ui.exportMenuItem.addEventListener("mouseleave", () => {
     exportMenuCloseTimer = setTimeout(() => {
       ui.exportMenuItem.classList.remove("is-open");
-    }, 2000);
+    }, 1500);
   });
 
   ui.recordButton.addEventListener("click", async () => {

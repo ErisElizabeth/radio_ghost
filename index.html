@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Ghost</title>
-    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.10" />
+    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.12" />
   </head>
   <body>
     <nav class="menu-bar" aria-label="Application menu">
@@ -26,11 +26,6 @@
           </div>
         </div>
       </div>
-      <div class="window-controls" aria-label="Window controls">
-        <button class="window-control" type="button" aria-label="Minimize" title="Minimize">-</button>
-        <button class="window-control" type="button" aria-label="Maximize" title="Maximize">[]</button>
-        <button class="window-control close" type="button" aria-label="Close" title="Close">X</button>
-      </div>
     </nav>
 
     <main class="app-shell">
@@ -44,8 +39,8 @@
             <defs>
               <linearGradient id="waveTaper" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stop-color="black" stop-opacity="0" />
-                <stop offset="14%" stop-color="white" stop-opacity="1" />
-                <stop offset="86%" stop-color="white" stop-opacity="1" />
+                <stop offset="12%" stop-color="white" stop-opacity="1" />
+                <stop offset="88%" stop-color="white" stop-opacity="1" />
                 <stop offset="100%" stop-color="black" stop-opacity="0" />
               </linearGradient>
 
@@ -54,29 +49,78 @@
               </mask>
             </defs>
 
-            <g class="wave-bob" mask="url(#taperMask)">
-              <path
-                class="wave wave-soft-glow"
-                d="M 0 90
-                   C 50 74, 100 74, 150 90
-                   C 200 106, 250 106, 300 90
-                   C 350 74, 400 74, 450 90
-                   C 500 106, 550 106, 600 90
-                   C 650 74, 700 74, 750 90
-                   C 800 106, 850 106, 900 90
-                   C 950 74, 1000 74, 1050 90"
-              />
-              <path
-                class="wave wave-core"
-                d="M 0 90
-                   C 50 74, 100 74, 150 90
-                   C 200 106, 250 106, 300 90
-                   C 350 74, 400 74, 450 90
-                   C 500 106, 550 106, 600 90
-                   C 650 74, 700 74, 750 90
-                   C 800 106, 850 106, 900 90
-                   C 950 74, 1000 74, 1050 90"
-              />
+            <g mask="url(#taperMask)">
+              <path class="wave wave-glow">
+                <animate
+                  attributeName="d"
+                  dur="2.8s"
+                  repeatCount="indefinite"
+                  values="
+                    M 0 90
+                    C 50 72, 100 72, 150 90
+                    C 200 108, 250 108, 300 90
+                    C 350 72, 400 72, 450 90
+                    C 500 108, 550 108, 600 90
+                    C 650 72, 700 72, 750 90
+                    C 800 108, 850 108, 900 90
+                    C 950 72, 1000 72, 1050 90;
+
+                    M 0 90
+                    C 50 108, 100 108, 150 90
+                    C 200 72, 250 72, 300 90
+                    C 350 108, 400 108, 450 90
+                    C 500 72, 550 72, 600 90
+                    C 650 108, 700 108, 750 90
+                    C 800 72, 850 72, 900 90
+                    C 950 108, 1000 108, 1050 90;
+
+                    M 0 90
+                    C 50 72, 100 72, 150 90
+                    C 200 108, 250 108, 300 90
+                    C 350 72, 400 72, 450 90
+                    C 500 108, 550 108, 600 90
+                    C 650 72, 700 72, 750 90
+                    C 800 108, 850 108, 900 90
+                    C 950 72, 1000 72, 1050 90
+                  "
+                />
+              </path>
+
+              <path class="wave wave-core">
+                <animate
+                  attributeName="d"
+                  dur="2.8s"
+                  repeatCount="indefinite"
+                  values="
+                    M 0 90
+                    C 50 72, 100 72, 150 90
+                    C 200 108, 250 108, 300 90
+                    C 350 72, 400 72, 450 90
+                    C 500 108, 550 108, 600 90
+                    C 650 72, 700 72, 750 90
+                    C 800 108, 850 108, 900 90
+                    C 950 72, 1000 72, 1050 90;
+
+                    M 0 90
+                    C 50 108, 100 108, 150 90
+                    C 200 72, 250 72, 300 90
+                    C 350 108, 400 108, 450 90
+                    C 500 72, 550 72, 600 90
+                    C 650 108, 700 108, 750 90
+                    C 800 72, 850 72, 900 90
+                    C 950 108, 1000 108, 1050 90;
+
+                    M 0 90
+                    C 50 72, 100 72, 150 90
+                    C 200 108, 250 108, 300 90
+                    C 350 72, 400 72, 450 90
+                    C 500 108, 550 108, 600 90
+                    C 650 72, 700 72, 750 90
+                    C 800 108, 850 108, 900 90
+                    C 950 72, 1000 72, 1050 90
+                  "
+                />
+              </path>
             </g>
           </svg>
         </div>
@@ -106,7 +150,7 @@
       </section>
     </main>
 
-    <script src="vendor/lame.min.js?v=0.1.0-alpha.10"></script>
-    <script src="renderer.js?v=0.1.0-alpha.10"></script>
+    <script src="vendor/lame.min.js?v=0.1.0-alpha.12"></script>
+    <script src="renderer.js?v=0.1.0-alpha.12"></script>
   </body>
 </html>

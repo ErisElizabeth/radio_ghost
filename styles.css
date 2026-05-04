@@ -50,7 +50,6 @@ button:hover:not(:disabled) {
   z-index: 20;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   min-height: 38px;
   border-bottom: 1px solid rgba(242, 232, 216, 0.1);
   background: rgba(18, 16, 24, 0.96);
@@ -143,35 +142,6 @@ button:hover:not(:disabled) {
   transform: translateY(0);
 }
 
-.window-controls {
-  display: flex;
-  align-items: stretch;
-  height: 38px;
-}
-
-.window-control {
-  display: grid;
-  min-width: 46px;
-  place-items: center;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background: transparent;
-  color: var(--muted-text);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.window-control:hover {
-  background: rgba(242, 232, 216, 0.08);
-  color: var(--primary-text);
-}
-
-.window-control.close:hover {
-  background: var(--recording);
-  color: var(--primary-text);
-}
-
 .app-shell {
   width: min(1040px, calc(100vw - 32px));
   margin: 0 auto;
@@ -223,45 +193,26 @@ p {
   background: transparent;
 }
 
-.wave-bob {
-  animation: wave-bob 3s ease-in-out infinite;
-  transform-origin: center;
-}
-
 .wave {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.wave-soft-glow {
+.wave-glow {
   stroke: #7cffb2;
-  stroke-width: 8;
-  opacity: 0.32;
+  stroke-width: 7;
+  opacity: 0.28;
   filter:
-    drop-shadow(0 0 6px rgba(124, 255, 178, 0.55))
-    drop-shadow(0 0 12px rgba(124, 255, 178, 0.35));
+    drop-shadow(0 0 5px rgba(124, 255, 178, 0.45))
+    drop-shadow(0 0 10px rgba(124, 255, 178, 0.28));
 }
 
 .wave-core {
   stroke: #214f38;
   stroke-width: 3.5;
   opacity: 1;
-  filter: drop-shadow(0 0 4px rgba(124, 255, 178, 0.45));
-}
-
-@keyframes wave-bob {
-  0% {
-    transform: translateY(0) scaleY(0.92);
-  }
-
-  50% {
-    transform: translateY(-8px) scaleY(1.08);
-  }
-
-  100% {
-    transform: translateY(0) scaleY(0.92);
-  }
+  filter: drop-shadow(0 0 3px rgba(124, 255, 178, 0.45));
 }
 
 .recorder-panel {
