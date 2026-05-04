@@ -4,26 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Ghost</title>
-    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.2" />
+    <link rel="stylesheet" href="styles.css?v=0.1.0-alpha.3" />
   </head>
   <body>
     <nav class="menu-bar" aria-label="Application menu">
-      <div class="menu-item">
-        <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">
-          File
-        </button>
-        <div class="menu-panel" role="menu">
-          <button id="menuImportBtn" class="menu-command" type="button" role="menuitem">
-            Import
-          </button>
-          <div class="menu-command has-submenu" role="menuitem" aria-haspopup="true">
+      <div class="menu">
+        <button id="fileMenuButton" class="menu-button" type="button">File</button>
+        <div class="menu-list" aria-label="File menu">
+          <button id="importCommand" class="menu-command" type="button">Import</button>
+          <div class="menu-command submenu">
             <span>Export</span>
             <span aria-hidden="true">></span>
-            <div class="submenu-panel" role="menu">
-              <button id="menuExportWavBtn" class="menu-command" type="button" role="menuitem" disabled>
+            <div class="submenu-list" aria-label="Export menu">
+              <button id="exportWavCommand" class="menu-command" type="button" disabled>
                 WAV
               </button>
-              <button id="menuExportMp3Btn" class="menu-command" type="button" role="menuitem" disabled>
+              <button id="exportMp3Command" class="menu-command" type="button" disabled>
                 MP3
               </button>
             </div>
@@ -33,15 +29,15 @@
     </nav>
 
     <main class="app-shell">
-      <section class="topbar">
+      <header class="topbar">
         <div>
           <h1>Radio Ghost</h1>
           <p id="status">Ready to record</p>
         </div>
         <span class="badge">Standalone web app</span>
-      </section>
+      </header>
 
-      <section class="recorder-panel">
+      <section class="recorder-panel" aria-label="Recorder">
         <div class="meter-wrap" aria-label="Input level">
           <canvas id="meter" width="760" height="160"></canvas>
         </div>
@@ -49,17 +45,17 @@
         <div class="timer" id="timer">00:00.0</div>
 
         <div class="controls">
-          <button id="recordBtn" class="primary" type="button">Record</button>
-          <button id="stopBtn" type="button" disabled>Stop</button>
-          <button id="playBtn" type="button" disabled>Play</button>
+          <button id="recordButton" class="primary" type="button">Record</button>
+          <button id="stopButton" type="button" disabled>Stop</button>
+          <button id="playButton" type="button" disabled>Play</button>
         </div>
-        <input id="fileInput" type="file" accept=".wav,.mp3,audio/wav,audio/mpeg" hidden />
 
-        <audio id="player" controls></audio>
+        <input id="fileInput" type="file" accept=".wav,.mp3,audio/wav,audio/mpeg" hidden />
+        <audio id="audioPlayer" controls></audio>
       </section>
     </main>
 
-    <script src="lame.min.js?v=0.1.0-alpha.2"></script>
-    <script src="renderer.js?v=0.1.0-alpha.2"></script>
+    <script src="vendor/lame.min.js?v=0.1.0-alpha.3"></script>
+    <script src="renderer.js?v=0.1.0-alpha.3"></script>
   </body>
 </html>

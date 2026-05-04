@@ -11,8 +11,8 @@
 }
 
 body {
-  margin: 0;
   min-height: 100vh;
+  margin: 0;
   background:
     radial-gradient(circle at 18% 8%, rgba(119, 229, 207, 0.12), transparent 28%),
     radial-gradient(circle at 84% 18%, rgba(194, 92, 255, 0.12), transparent 30%),
@@ -33,7 +33,7 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  opacity: 0.42;
 }
 
 button.primary {
@@ -54,11 +54,11 @@ button.primary {
   padding: 0 14px;
 }
 
-.menu-item {
+.menu {
   position: relative;
 }
 
-.menu-trigger,
+.menu-button,
 .menu-command {
   min-width: 0;
   border: 0;
@@ -69,32 +69,32 @@ button.primary {
   font-weight: 600;
 }
 
-.menu-trigger {
+.menu-button {
   height: 38px;
   padding: 0 14px;
 }
 
 .menu-command {
-  width: 100%;
   display: flex;
+  width: 100%;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 28px;
   padding: 9px 12px;
   text-align: left;
   white-space: nowrap;
 }
 
-.menu-trigger:hover,
-.menu-item:focus-within .menu-trigger,
-.menu-item:hover .menu-trigger,
+.menu-button:hover,
+.menu:focus-within .menu-button,
+.menu:hover .menu-button,
 .menu-command:hover,
-.has-submenu:hover {
+.submenu:hover {
   background: rgba(104, 214, 200, 0.14);
 }
 
-.menu-panel,
-.submenu-panel {
+.menu-list,
+.submenu-list {
   position: absolute;
   min-width: 168px;
   border: 1px solid rgba(242, 237, 247, 0.14);
@@ -110,27 +110,23 @@ button.primary {
     transform 120ms ease;
 }
 
-.menu-panel {
+.menu-list {
   top: 38px;
   left: 0;
 }
 
-.submenu-panel {
+.submenu-list {
   top: -7px;
   left: calc(100% + 6px);
 }
 
-.menu-item:hover .menu-panel,
-.menu-item:focus-within .menu-panel,
-.has-submenu:hover .submenu-panel,
-.has-submenu:focus-within .submenu-panel {
+.menu:hover .menu-list,
+.menu:focus-within .menu-list,
+.submenu:hover .submenu-list,
+.submenu:focus-within .submenu-list {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
-}
-
-.menu-command:disabled {
-  opacity: 0.38;
 }
 
 .app-shell {

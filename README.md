@@ -14,6 +14,8 @@ This repository is intentionally small. GitHub Pages only needs the static app f
 - `.nojekyll`
 - `vendor/lame.min.js`
 
+The `vendor/` folder contains third-party browser code used for MP3 export.
+
 ## Do Not Upload
 
 - `node_modules/`

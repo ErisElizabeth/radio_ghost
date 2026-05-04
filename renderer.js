@@ -1,52 +1,65 @@
-const recordBtn = document.querySelector("#recordBtn");
-const menuImportBtn = document.querySelector("#menuImportBtn");
-const fileInput = document.querySelector("#fileInput");
-const stopBtn = document.querySelector("#stopBtn");
-const playBtn = document.querySelector("#playBtn");
-const menuExportWavBtn = document.querySelector("#menuExportWavBtn");
-const menuExportMp3Btn = document.querySelector("#menuExportMp3Btn");
-const player = document.querySelector("#player");
-const statusText = document.querySelector("#status");
-const timer = document.querySelector("#timer");
-const canvas = document.querySelector("#meter");
-const canvasContext = canvas.getContext("2d");
+const ui = {
+  importCommand: document.querySelector("#importCommand"),
+  exportWavCommand: document.querySelector("#exportWavCommand"),
+  exportMp3Command: document.querySelector("#exportMp3Command"),
+  recordButton: document.querySelector("#recordButton"),
+  stopButton: document.querySelector("#stopButton"),
+  playButton: document.querySelector("#playButton"),
+  fileInput: document.querySelector("#fileInput"),
+  player: document.querySelector("#audioPlayer"),
+  status: document.querySelector("#status"),
+  timer: document.querySelector("#timer"),
+  meter: document.querySelector("#meter")
+};
 
-let mediaRecorder;
-let audioChunks = [];
-let currentBlob;
-let currentFileName = "radio-ghost";
-let recordingStartedAt = 0;
-let timerFrame;
-let audioContext;
-let analyser;
-let meterFrame;
-let sourceNode;
-let inputStream;
-let currentObjectUrl;
-let activeRecordingMimeType = "";
+const meterContext = ui.meter.getContext("2d");
+
+const state = {
+  recorder: null,
+  chunks: [],
+  blob: null,
+  fileName: "radio-ghost",
+  objectUrl: null,
+  startedAt: 0,
+  timerFrame: null,
+  meterFrame: null,
+  audioContext: null,
+  analyser: null,
+  sourceNode: null,
+  inputStream: null,
+  recordingMimeType: "audio/webm"
+};
 
 function setStatus(message) {
-  statusText.textContent = message;
+  ui.status.textContent = message;
 }
 
-function setPlayerBlob(blob, fileName = "radio-ghost") {
-  if (currentObjectUrl) {
-    URL.revokeObjectURL(currentObjectUrl);
+function setExportReady(isReady) {
+  ui.exportWavCommand.disabled = !isReady;
+  ui.exportMp3Command.disabled = !isReady;
+}
+
+function setRecordingControls(isRecording) {
+  ui.recordButton.disabled = isRecording;
+  ui.importCommand.disabled = isRecording;
+  ui.stopButton.disabled = !isRecording;
+  ui.playButton.disabled = isRecording || !state.blob;
+  setExportReady(!isRecording && Boolean(state.blob));
+}
+
+function setCurrentBlob(blob, fileName) {
+  if (state.objectUrl) {
+    URL.revokeObjectURL(state.objectUrl);
   }
 
-  currentBlob = blob;
-  currentFileName = fileName.replace(/\.[^/.]+$/, "") || "radio-ghost";
-  currentObjectUrl = URL.createObjectURL(blob);
-  player.src = currentObjectUrl;
-  player.load();
-  playBtn.disabled = false;
-  menuExportWavBtn.disabled = false;
-  menuExportMp3Btn.disabled = false;
-}
+  state.blob = blob;
+  state.fileName = fileName.replace(/\.[^/.]+$/, "") || "radio-ghost";
+  state.objectUrl = URL.createObjectURL(blob);
 
-function setExportDisabled(isDisabled) {
-  menuExportWavBtn.disabled = isDisabled;
-  menuExportMp3Btn.disabled = isDisabled;
+  ui.player.src = state.objectUrl;
+  ui.player.load();
+  ui.playButton.disabled = false;
+  setExportReady(true);
 }
 
 function formatDuration(milliseconds) {
@@ -58,60 +71,60 @@ function formatDuration(milliseconds) {
 }
 
 function updateTimer() {
-  timer.textContent = formatDuration(Date.now() - recordingStartedAt);
-  timerFrame = requestAnimationFrame(updateTimer);
+  ui.timer.textContent = formatDuration(Date.now() - state.startedAt);
+  state.timerFrame = requestAnimationFrame(updateTimer);
 }
 
 function drawIdleMeter() {
-  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
-  canvasContext.fillStyle = "#09090d";
-  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-  canvasContext.strokeStyle = "rgba(242, 237, 247, 0.14)";
-  canvasContext.lineWidth = 1;
+  meterContext.clearRect(0, 0, ui.meter.width, ui.meter.height);
+  meterContext.fillStyle = "#09090d";
+  meterContext.fillRect(0, 0, ui.meter.width, ui.meter.height);
+  meterContext.strokeStyle = "rgba(242, 237, 247, 0.14)";
+  meterContext.lineWidth = 1;
 
-  for (let x = 0; x < canvas.width; x += 38) {
-    canvasContext.beginPath();
-    canvasContext.moveTo(x, 0);
-    canvasContext.lineTo(x, canvas.height);
-    canvasContext.stroke();
+  for (let x = 0; x < ui.meter.width; x += 38) {
+    meterContext.beginPath();
+    meterContext.moveTo(x, 0);
+    meterContext.lineTo(x, ui.meter.height);
+    meterContext.stroke();
   }
 }
 
-function drawMeter() {
-  if (!analyser) {
+function drawLiveMeter() {
+  if (!state.analyser) {
     drawIdleMeter();
     return;
   }
 
-  const data = new Uint8Array(analyser.frequencyBinCount);
-  analyser.getByteTimeDomainData(data);
+  const data = new Uint8Array(state.analyser.frequencyBinCount);
+  state.analyser.getByteTimeDomainData(data);
 
-  canvasContext.fillStyle = "#09090d";
-  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-  canvasContext.lineWidth = 3;
-  canvasContext.strokeStyle = "#68d6c8";
-  canvasContext.beginPath();
+  meterContext.fillStyle = "#09090d";
+  meterContext.fillRect(0, 0, ui.meter.width, ui.meter.height);
+  meterContext.lineWidth = 3;
+  meterContext.strokeStyle = "#68d6c8";
+  meterContext.beginPath();
 
-  const sliceWidth = canvas.width / data.length;
+  const sliceWidth = ui.meter.width / data.length;
   let x = 0;
 
   data.forEach((value, index) => {
-    const y = (value / 255) * canvas.height;
+    const y = (value / 255) * ui.meter.height;
     if (index === 0) {
-      canvasContext.moveTo(x, y);
+      meterContext.moveTo(x, y);
     } else {
-      canvasContext.lineTo(x, y);
+      meterContext.lineTo(x, y);
     }
     x += sliceWidth;
   });
 
-  canvasContext.stroke();
-  meterFrame = requestAnimationFrame(drawMeter);
+  meterContext.stroke();
+  state.meterFrame = requestAnimationFrame(drawLiveMeter);
 }
 
-function getSupportedMimeType() {
-  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/wav"];
-  return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) || "";
+function getRecordingMimeType() {
+  const options = ["audio/webm;codecs=opus", "audio/webm", "audio/wav"];
+  return options.find((option) => MediaRecorder.isTypeSupported(option)) || "";
 }
 
 function writeAscii(view, offset, text) {
@@ -166,7 +179,7 @@ function audioBufferToMp3Bytes(audioBuffer) {
   const bitRate = 128;
   const encoder = new lamejs.Mp3Encoder(channelCount, sampleRate, bitRate);
   const samplesPerFrame = 1152;
-  const mp3Chunks = [];
+  const chunks = [];
   const channels = Array.from({ length: channelCount }, (_value, index) =>
     audioBuffer.getChannelData(index)
   ).map((channel) => {
@@ -188,20 +201,19 @@ function audioBufferToMp3Bytes(audioBuffer) {
         : encoder.encodeBuffer(left);
 
     if (chunk.length > 0) {
-      mp3Chunks.push(chunk);
+      chunks.push(chunk);
     }
   }
 
   const finalChunk = encoder.flush();
   if (finalChunk.length > 0) {
-    mp3Chunks.push(finalChunk);
+    chunks.push(finalChunk);
   }
 
-  const totalLength = mp3Chunks.reduce((total, chunk) => total + chunk.length, 0);
-  const bytes = new Uint8Array(totalLength);
+  const bytes = new Uint8Array(chunks.reduce((total, chunk) => total + chunk.length, 0));
   let offset = 0;
 
-  mp3Chunks.forEach((chunk) => {
+  chunks.forEach((chunk) => {
     bytes.set(chunk, offset);
     offset += chunk.length;
   });
@@ -211,12 +223,12 @@ function audioBufferToMp3Bytes(audioBuffer) {
 
 async function blobToAudioBuffer(blob) {
   const encodedBuffer = await blob.arrayBuffer();
-  const decoder = new AudioContext();
+  const context = new AudioContext();
 
   try {
-    return await decoder.decodeAudioData(encodedBuffer.slice(0));
+    return await context.decodeAudioData(encodedBuffer.slice(0));
   } finally {
-    await decoder.close();
+    await context.close();
   }
 }
 
@@ -226,155 +238,140 @@ function downloadBytes(bytes, extension, mimeType) {
   const link = document.createElement("a");
 
   link.href = url;
-  link.download = `${currentFileName || "radio-ghost"}-export.${extension}`;
+  link.download = `${state.fileName}-export.${extension}`;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
 }
 
-async function startRecording() {
-  inputStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const mimeType = getSupportedMimeType();
-  activeRecordingMimeType = mimeType || "audio/webm";
+function cleanupRecording() {
+  cancelAnimationFrame(state.timerFrame);
+  cancelAnimationFrame(state.meterFrame);
 
-  audioChunks = [];
-  currentBlob = null;
-  if (currentObjectUrl) {
-    URL.revokeObjectURL(currentObjectUrl);
-    currentObjectUrl = null;
-  }
-  player.removeAttribute("src");
-  player.load();
-
-  audioContext = new AudioContext();
-  analyser = audioContext.createAnalyser();
-  analyser.fftSize = 2048;
-  sourceNode = audioContext.createMediaStreamSource(inputStream);
-  sourceNode.connect(analyser);
-
-  mediaRecorder = new MediaRecorder(inputStream, mimeType ? { mimeType } : undefined);
-  mediaRecorder.addEventListener("dataavailable", (event) => {
-    if (event.data.size > 0) {
-      audioChunks.push(event.data);
-    }
-  });
-
-  mediaRecorder.addEventListener("stop", finalizeRecording);
-  mediaRecorder.addEventListener("error", (event) => {
-    setStatus(`Recording error: ${event.error?.message || "Unknown recorder error"}`);
-    resetRecordingControls();
-  });
-
-  mediaRecorder.start(250);
-  recordingStartedAt = Date.now();
-  recordBtn.disabled = true;
-  menuImportBtn.disabled = true;
-  stopBtn.disabled = false;
-  playBtn.disabled = true;
-  setExportDisabled(true);
-  setStatus("Recording...");
-  updateTimer();
-  drawMeter();
-}
-
-function resetRecordingControls() {
-  cancelAnimationFrame(timerFrame);
-  cancelAnimationFrame(meterFrame);
-  recordBtn.disabled = false;
-  menuImportBtn.disabled = false;
-  stopBtn.disabled = true;
-
-  if (inputStream) {
-    inputStream.getTracks().forEach((track) => track.stop());
+  if (state.inputStream) {
+    state.inputStream.getTracks().forEach((track) => track.stop());
   }
 
-  if (sourceNode) {
-    sourceNode.disconnect();
+  if (state.sourceNode) {
+    state.sourceNode.disconnect();
   }
 
-  if (audioContext) {
-    audioContext.close();
+  if (state.audioContext) {
+    state.audioContext.close();
   }
 
-  analyser = null;
-  inputStream = null;
-  sourceNode = null;
-  audioContext = null;
+  state.inputStream = null;
+  state.sourceNode = null;
+  state.audioContext = null;
+  state.analyser = null;
   drawIdleMeter();
 }
 
-function finalizeRecording() {
-  timer.textContent = formatDuration(Date.now() - recordingStartedAt);
-  resetRecordingControls();
+function finishRecording() {
+  ui.timer.textContent = formatDuration(Date.now() - state.startedAt);
+  cleanupRecording();
 
-  if (audioChunks.length > 0) {
-    const blob = new Blob(audioChunks, { type: activeRecordingMimeType });
-    setPlayerBlob(blob, "radio-ghost-recording");
-    setStatus("Recording ready");
-  } else {
+  if (state.chunks.length === 0) {
     setStatus("Recording stopped, but no audio was captured");
+    setRecordingControls(false);
+    return;
   }
+
+  const blob = new Blob(state.chunks, { type: state.recordingMimeType });
+  setCurrentBlob(blob, "radio-ghost-recording");
+  setStatus("Recording ready");
+  setRecordingControls(false);
+}
+
+async function startRecording() {
+  state.inputStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const mimeType = getRecordingMimeType();
+
+  state.chunks = [];
+  state.blob = null;
+  state.recordingMimeType = mimeType || "audio/webm";
+
+  if (state.objectUrl) {
+    URL.revokeObjectURL(state.objectUrl);
+    state.objectUrl = null;
+  }
+
+  ui.player.removeAttribute("src");
+  ui.player.load();
+
+  state.audioContext = new AudioContext();
+  state.analyser = state.audioContext.createAnalyser();
+  state.analyser.fftSize = 2048;
+  state.sourceNode = state.audioContext.createMediaStreamSource(state.inputStream);
+  state.sourceNode.connect(state.analyser);
+
+  state.recorder = new MediaRecorder(state.inputStream, mimeType ? { mimeType } : undefined);
+  state.recorder.addEventListener("dataavailable", (event) => {
+    if (event.data.size > 0) {
+      state.chunks.push(event.data);
+    }
+  });
+  state.recorder.addEventListener("stop", finishRecording);
+  state.recorder.addEventListener("error", (event) => {
+    setStatus(`Recording error: ${event.error?.message || "Unknown recorder error"}`);
+    cleanupRecording();
+    setRecordingControls(false);
+  });
+
+  state.recorder.start(250);
+  state.startedAt = Date.now();
+  setRecordingControls(true);
+  setStatus("Recording...");
+  updateTimer();
+  drawLiveMeter();
+}
+
+function stopRecording() {
+  if (!state.recorder || state.recorder.state === "inactive") {
+    setStatus("No active recording to stop");
+    setRecordingControls(false);
+    return;
+  }
+
+  ui.stopButton.disabled = true;
+  setStatus("Stopping recording...");
+
+  try {
+    state.recorder.requestData();
+  } catch (_error) {
+    // Some browsers do not allow requestData while stopping.
+  }
+
+  state.recorder.stop();
 }
 
 function importAudio() {
-  if (!fileInput) {
-    setStatus("Import needs the updated index.html file");
-    return;
-  }
-
-  fileInput.value = "";
-  fileInput.click();
+  ui.fileInput.value = "";
+  ui.fileInput.click();
 }
 
-function handleImportedFile() {
-  if (!fileInput) {
-    return;
-  }
-
-  const file = fileInput.files[0];
+function handleFileImport() {
+  const file = ui.fileInput.files[0];
   if (!file) {
     return;
   }
 
-  setPlayerBlob(file, file.name);
-  timer.textContent = "00:00.0";
+  setCurrentBlob(file, file.name);
+  ui.timer.textContent = "00:00.0";
   setStatus(`Imported ${file.name}`);
 }
 
-function stopRecording() {
-  setStatus("Stop clicked");
-
-  if (!mediaRecorder || mediaRecorder.state === "inactive") {
-    stopBtn.disabled = true;
-    recordBtn.disabled = false;
-    menuImportBtn.disabled = false;
-    setStatus("No active recording to stop");
-    return;
-  }
-
-  stopBtn.disabled = true;
-  setStatus("Stopping recording...");
-
-  try {
-    mediaRecorder.requestData();
-  } catch (_error) {
-    // Some browsers do not allow requestData during shutdown; stop still finalizes.
-  }
-
-  mediaRecorder.stop();
-}
-
 async function exportAudio(extension) {
-  if (!currentBlob) {
+  if (!state.blob) {
     return;
   }
 
-  setExportDisabled(true);
+  setExportReady(false);
   setStatus(`Preparing ${extension.toUpperCase()} export...`);
 
   try {
-    const audioBuffer = await blobToAudioBuffer(currentBlob);
+    const audioBuffer = await blobToAudioBuffer(state.blob);
     const bytes =
       extension === "mp3" ? audioBufferToMp3Bytes(audioBuffer) : audioBufferToWavBytes(audioBuffer);
     const mimeType = extension === "mp3" ? "audio/mpeg" : "audio/wav";
@@ -384,32 +381,34 @@ async function exportAudio(extension) {
   } catch (error) {
     setStatus(`${extension.toUpperCase()} export failed: ${error.message}`);
   } finally {
-    setExportDisabled(false);
+    setExportReady(Boolean(state.blob));
   }
 }
 
-recordBtn.addEventListener("click", async () => {
-  try {
-    await startRecording();
-  } catch (error) {
-    setStatus(`Microphone error: ${error.message}`);
-    recordBtn.disabled = false;
-    menuImportBtn.disabled = false;
-    stopBtn.disabled = true;
-  }
-});
+function wireEvents() {
+  ui.importCommand.addEventListener("click", importAudio);
+  ui.exportWavCommand.addEventListener("click", () => exportAudio("wav"));
+  ui.exportMp3Command.addEventListener("click", () => exportAudio("mp3"));
+  ui.fileInput.addEventListener("change", handleFileImport);
 
-menuImportBtn.addEventListener("click", importAudio);
-stopBtn.addEventListener("click", stopRecording);
-stopBtn.onclick = stopRecording;
-playBtn.addEventListener("click", () => player.play());
-menuExportWavBtn.addEventListener("click", () => exportAudio("wav"));
-menuExportMp3Btn.addEventListener("click", () => exportAudio("mp3"));
+  ui.recordButton.addEventListener("click", async () => {
+    try {
+      await startRecording();
+    } catch (error) {
+      setStatus(`Microphone error: ${error.message}`);
+      cleanupRecording();
+      setRecordingControls(false);
+    }
+  });
 
-if (fileInput) {
-  fileInput.addEventListener("change", handleImportedFile);
-} else {
-  setStatus("Ready to record. Upload the updated index.html to enable Import.");
+  ui.stopButton.addEventListener("click", stopRecording);
+  ui.playButton.addEventListener("click", () => ui.player.play());
 }
 
-drawIdleMeter();
+function boot() {
+  setRecordingControls(false);
+  drawIdleMeter();
+  wireEvents();
+}
+
+boot();
